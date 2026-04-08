@@ -1,0 +1,179 @@
+using AllegroApi.Clients;
+using AllegroApi.Configuration;
+using AllegroApi.Http;
+using AllegroApi.Models.Miscellaneous;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class ListingClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly ListingClient _client;
+
+    public ListingClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new ListingClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task SearchOfferingsByPhraseAsync_ValidPhrase_ReturnsResults()
+    {
+        // Arrange
+        var phrase = "laptop";
+        var expectedResponse = new ListingResponse
+        {
+            Items = new List<ListingOffer>
+            {
+                new ListingOffer { Id = "offer-1", Name = "Gaming Laptop" },
+                new ListingOffer { Id = "offer-2", Name = "Business Laptop" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.SearchOfferingsByPhraseAsync(phrase, limit: 10);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(2);
+        result.Items![0].Name.Should().Be("Gaming Laptop");
+    }
+
+    [Fact]
+    public async Task SearchOfferingsByPhraseAsync_NullPhrase_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.SearchOfferingsByPhraseAsync(null!));
+    }
+
+    [Fact]
+    public async Task SearchOfferingsByCategoryAsync_ValidCategory_ReturnsResults()
+    {
+        // Arrange
+        var categoryId = "12345";
+        var expectedResponse = new ListingResponse
+        {
+            Items = new List<ListingOffer>
+            {
+                new ListingOffer { Id = "offer-3", Name = "Product in Category" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.SearchOfferingsByCategoryAsync(categoryId, limit: 20);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+        result.Items![0].Id.Should().Be("offer-3");
+    }
+
+    [Fact]
+    public async Task SearchOfferingsByCategoryAsync_NullCategoryId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.SearchOfferingsByCategoryAsync(null!));
+    }
+
+    [Fact]
+    public async Task SearchOfferingsBySellerAsync_ValidSeller_ReturnsResults()
+    {
+        // Arrange
+        var sellerId = "seller-123";
+        var expectedResponse = new ListingResponse
+        {
+            Items = new List<ListingOffer>
+            {
+                new ListingOffer { Id = "offer-4", Name = "Seller Product" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.SearchOfferingsBySellerAsync(sellerId, limit: 50);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task SearchOfferingsBySellerAsync_NullSellerId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.SearchOfferingsBySellerAsync(null!));
+    }
+
+    [Fact]
+    public async Task SearchOfferingsAsync_ValidParams_ReturnsResults()
+    {
+        // Arrange
+        var searchParams = new Dictionary<string, string>
+        {
+            { "phrase", "smartphone" },
+            { "category.id", "98765" }
+        };
+        var expectedResponse = new ListingResponse
+        {
+            Items = new List<ListingOffer>
+            {
+                new ListingOffer { Id = "offer-5", Name = "Smartphone" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.SearchOfferingsAsync(searchParams, limit: 30);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+        result.Items![0].Name.Should().Be("Smartphone");
+    }
+}

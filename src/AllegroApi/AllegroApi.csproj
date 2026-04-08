@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    
+    <!-- NuGet Package Information -->
+    <PackageId>AllegroApi</PackageId>
+  <Version>2.0.0</Version>
+    <Authors>jomardyan</Authors>
+    <Company>Allegro .NET SDK</Company>
+    <Product>Unofficial Allegro .NET SDK</Product>
+    <Title>Unofficial Allegro .NET SDK - Complete Client for Allegro REST API</Title>
+    <Description>An unofficial, community-maintained .NET client library for Allegro REST API. Provides 170+ methods covering 95% of all Allegro endpoints across 35 specialized clients. Features: strongly-typed requests/responses, async/await throughout, 11 specialized exception types, built-in retry logic with exponential backoff, rate limit handling, complete XML documentation, 200+ unit tests. Supports: offers, products, orders, fulfillment, categories, images, shipping, payments, billing, messaging, disputes, returns, badges, classifieds, EU compliance (GPSR), and more. Production-ready for .NET 8.0+. Note: This SDK is not officially endorsed or supported by Allegro.</Description>
+    <PackageTags>allegro;allegro-api;rest-api;ecommerce;marketplace;poland;polish;client;sdk;dotnet;csharp;async;typed;auction;shopping;retail;api-client;http-client;fulfillment;warehouse;logistics;gpsr;compliance;unofficial</PackageTags>
+    <RepositoryUrl>https://github.com/jomardyan/Allegro.NET.SDK</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/jomardyan/Allegro.NET.SDK</PackageProjectUrl>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
+    <PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../../RELEASE_NOTES.md"))</PackageReleaseNotes>
+    <Copyright>Copyright © 2025 Allegro .NET SDK Contributors</Copyright>
+  <!-- Generate package as part of a Release build to simplify producing CI artifacts. -->
+  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+    
+    <!-- Documentation -->
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    
+    <!-- Package Metadata -->
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <DevelopmentDependency>false</DevelopmentDependency>
+    <IsTool>false</IsTool>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.nuget.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\RELEASE_NOTES.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.9" />
+    <PackageReference Include="System.Text.Json" Version="9.0.9" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,103 @@
+using AllegroApi.Clients;
+using AllegroApi.Http;
+using AllegroApi.Models.Messaging;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class MessagingClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly MessagingClient _client;
+
+    public MessagingClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApi.Configuration.AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new MessagingClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task GetMessagesAsync_ReturnsMessages()
+    {
+        // Arrange
+        var expectedResponse = new MessagesResponse
+        {
+            Messages = new List<MessageDto>
+            {
+                new MessageDto { Id = "msg1", Subject = "Test Message" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetMessagesAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Messages.Should().HaveCount(1);
+        result.Messages![0].Id.Should().Be("msg1");
+    }
+
+    [Fact]
+    public async Task GetMessageAsync_WithValidId_ReturnsMessage()
+    {
+        // Arrange
+        var expectedMessage = new MessageDto { Id = "msg2", Subject = "Another Message" };
+        SetupHttpResponse(HttpStatusCode.OK, expectedMessage);
+
+        // Act
+        var result = await _client.GetMessageAsync("msg2");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("msg2");
+    }
+
+    [Fact]
+    public async Task GetMessageAsync_WithNullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _client.GetMessageAsync(null!));
+    }
+}

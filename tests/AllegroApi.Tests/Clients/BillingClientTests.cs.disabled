@@ -1,0 +1,103 @@
+using AllegroApi.Clients;
+using AllegroApi.Http;
+using AllegroApi.Models.Billing;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class BillingClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly BillingClient _client;
+
+    public BillingClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApi.Configuration.AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new BillingClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task GetBillingEntriesAsync_ReturnsEntries()
+    {
+        // Arrange
+        var expectedResponse = new BillingEntriesResponse
+        {
+            BillingEntries = new List<BillingEntryDto>
+            {
+                new BillingEntryDto { Id = "entry1", Type = "FEE" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBillingEntriesAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.BillingEntries.Should().HaveCount(1);
+        result.BillingEntries![0].Id.Should().Be("entry1");
+    }
+
+    [Fact]
+    public async Task GetBillingEntryAsync_WithValidId_ReturnsEntry()
+    {
+        // Arrange
+        var expectedEntry = new BillingEntryDto { Id = "entry2", Type = "COMMISSION" };
+        SetupHttpResponse(HttpStatusCode.OK, expectedEntry);
+
+        // Act
+        var result = await _client.GetBillingEntryAsync("entry2");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("entry2");
+    }
+
+    [Fact]
+    public async Task GetBillingEntryAsync_WithNullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _client.GetBillingEntryAsync(null!));
+    }
+}

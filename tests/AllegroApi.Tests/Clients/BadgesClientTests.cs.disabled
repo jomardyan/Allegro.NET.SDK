@@ -1,0 +1,285 @@
+using AllegroApi.Clients;
+using AllegroApi.Configuration;
+using AllegroApi.Http;
+using AllegroApi.Models.Miscellaneous;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class BadgesClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly BadgesClient _client;
+
+    public BadgesClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new BadgesClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task GetBadgeCampaignsAsync_ReturnsListOfCampaigns()
+    {
+        // Arrange
+        var expectedResponse = new BadgeCampaignsResponse
+        {
+            BadgeCampaigns = new List<BadgeCampaign>
+            {
+                new BadgeCampaign { Id = "campaign-1", Name = "Summer Sale" },
+                new BadgeCampaign { Id = "campaign-2", Name = "Winter Sale" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBadgeCampaignsAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.BadgeCampaigns.Should().HaveCount(2);
+        result.BadgeCampaigns![0].Name.Should().Be("Summer Sale");
+    }
+
+    [Fact]
+    public async Task GetBadgeCampaignAsync_ValidId_ReturnsCampaign()
+    {
+        // Arrange
+        var campaignId = "campaign-123";
+        var expectedResponse = new BadgeCampaign
+        {
+            Id = campaignId,
+            Name = "Special Campaign"
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBadgeCampaignAsync(campaignId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(campaignId);
+        result.Name.Should().Be("Special Campaign");
+    }
+
+    [Fact]
+    public async Task GetBadgeCampaignAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetBadgeCampaignAsync(null!));
+    }
+
+    [Fact]
+    public async Task CreateBadgeApplicationAsync_ValidRequest_ReturnsApplication()
+    {
+        // Arrange
+        var request = new BadgeApplicationRequest
+        {
+            Campaign = new BadgeCampaignReference { Id = "campaign-1" },
+            Offers = new List<BadgeOfferCriteria>
+            {
+                new BadgeOfferCriteria { Offer = new BadgeOfferReference { Id = "offer-1" } }
+            }
+        };
+        var expectedResponse = new BadgeApplication
+        {
+            Id = "application-123",
+            Campaign = new BadgeCampaignReference { Id = "campaign-1" }
+        };
+        SetupHttpResponse(HttpStatusCode.Created, expectedResponse);
+
+        // Act
+        var result = await _client.CreateBadgeApplicationAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("application-123");
+    }
+
+    [Fact]
+    public async Task CreateBadgeApplicationAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.CreateBadgeApplicationAsync(null!));
+    }
+
+    [Fact]
+    public async Task GetBadgeApplicationsAsync_ValidCampaignId_ReturnsApplications()
+    {
+        // Arrange
+        var campaignId = "campaign-456";
+        var expectedResponse = new BadgeApplicationsResponse
+        {
+            BadgeApplications = new List<BadgeApplication>
+            {
+                new BadgeApplication { Id = "app-1" },
+                new BadgeApplication { Id = "app-2" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBadgeApplicationsAsync(campaignId, limit: 50);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.BadgeApplications.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetBadgeApplicationsAsync_NullCampaignId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetBadgeApplicationsAsync(null!));
+    }
+
+    [Fact]
+    public async Task GetBadgeApplicationAsync_ValidIds_ReturnsApplication()
+    {
+        // Arrange
+        var campaignId = "campaign-789";
+        var applicationId = "app-123";
+        var expectedResponse = new BadgeApplication
+        {
+            Id = applicationId,
+            Campaign = new BadgeCampaignReference { Id = campaignId }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBadgeApplicationAsync(campaignId, applicationId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(applicationId);
+    }
+
+    [Fact]
+    public async Task GetBadgeApplicationAsync_NullCampaignId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetBadgeApplicationAsync(null!, "app-id"));
+    }
+
+    [Fact]
+    public async Task GetBadgeApplicationAsync_NullApplicationId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetBadgeApplicationAsync("campaign-id", null!));
+    }
+
+    [Fact]
+    public async Task GetBadgeOperationsAsync_ValidApplicationId_ReturnsOperations()
+    {
+        // Arrange
+        var applicationId = "app-999";
+        var expectedResponse = new BadgeOperationsResponse
+        {
+            BadgeOperations = new List<BadgeOperation>
+            {
+                new BadgeOperation { Id = "op-1" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBadgeOperationsAsync(applicationId, limit: 25);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.BadgeOperations.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetBadgeOperationsAsync_NullApplicationId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetBadgeOperationsAsync(null!));
+    }
+
+    [Fact]
+    public async Task UpdateOfferBadgesAsync_ValidRequest_CompletesSuccessfully()
+    {
+        // Arrange
+        var request = new UpdateOfferBadgesRequest
+        {
+            Publication = new BadgePublicationRequest
+            {
+                Badges = new List<BadgeRequest>
+                {
+                    new BadgeRequest { Campaign = new BadgeCampaignReference { Id = "campaign-1" } }
+                }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, (object?)null);
+
+        // Act
+        await _client.UpdateOfferBadgesAsync("offer-123", request);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task UpdateOfferBadgesAsync_NullOfferId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var request = new UpdateOfferBadgesRequest();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.UpdateOfferBadgesAsync(null!, request));
+    }
+
+    [Fact]
+    public async Task UpdateOfferBadgesAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.UpdateOfferBadgesAsync("offer-123", null!));
+    }
+}

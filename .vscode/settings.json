@@ -1,0 +1,10 @@
+{
+    "yaml.schemas": {
+        "file:///home/codespace/.vscode-remote/extensions/continue.continue-1.2.5-linux-x64/config-yaml-schema.json": [
+            ".continue/**/*.yaml"
+        ],
+        "openapi:v3": "file:///workspaces/OfferManager/API%20DOC/swagger.yaml"
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
+}

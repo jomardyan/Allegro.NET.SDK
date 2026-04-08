@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>AllegroApi</id>
+    <version>2.0.0</version>
+    <title>Unofficial Allegro .NET SDK - Complete Client for Allegro REST API</title>
+    <authors>jomardyan</authors>
+    <owners>jomardyan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">GPL-3.0-or-later</license>
+    <projectUrl>https://github.com/jomardyan/Allegro.NET.SDK</projectUrl>
+    <repository type="git" url="https://github.com/jomardyan/Allegro.NET.SDK.git" />
+    <description>An unofficial, community-maintained .NET client library for Allegro REST API. Provides 170+ methods covering 95% of all Allegro endpoints across 35 specialized clients. Features: strongly-typed requests/responses, async/await throughout, 11 specialized exception types, built-in retry logic with exponential backoff, rate limit handling, complete XML documentation, 140+ unit tests. Supports: offers, products, orders, fulfillment, categories, images, shipping, payments, billing, messaging, disputes, returns, badges, classifieds, EU compliance (GPSR), and more. Production-ready for .NET 8.0+. Note: This SDK is not officially endorsed or supported by Allegro.</description>
+    <releaseNotes>
+      Version 2.0.0:
+      - Added FulfillmentClient (17 methods) for warehouse management, ASN, and stock tracking
+      - Added ListingClient (4 methods) for public offer search and browsing
+      - Added BadgesClient (6 methods) for badge campaign management
+      - Added ClassifiedsClient (4 methods) for classifieds package management
+      - Added DisputeAttachmentsClient (3 methods) for binary file handling
+      - Extended SaleExtensionsClient with additional service management (+6 methods)
+      - Extended AdvancedOffersClient with offer attachment support (+3 methods)
+      - API coverage increased to 95% (170+ of 180 endpoints)
+      - 200+ unit tests with 100% pass rate
+      - See RELEASE_NOTES.md for full details.
+    </releaseNotes>
+    <copyright>Copyright © 2025 Allegro .NET SDK Contributors</copyright>
+    <tags>allegro allegro-api rest-api ecommerce marketplace poland polish client sdk dotnet csharp async typed auction shopping retail api-client http-client fulfillment warehouse logistics gpsr compliance unofficial</tags>
+    <dependencies>
+      <group targetFramework="net8.0">
+        <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="9.0.9" />
+        <dependency id="Microsoft.Extensions.Http" version="9.0.9" />
+        <dependency id="System.Text.Json" version="9.0.9" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- Library -->
+    <file src="bin\Release\net8.0\AllegroApi.dll" target="lib\net8.0" />
+    <file src="bin\Release\net8.0\AllegroApi.xml" target="lib\net8.0" />
+    
+    <!-- Symbols -->
+    <file src="bin\Release\net8.0\AllegroApi.pdb" target="lib\net8.0" />
+    
+    <!-- Documentation -->
+    <file src="README.nuget.md" target="" />
+    <file src="..\..\LICENSE" target="" />
+    <file src="..\..\RELEASE_NOTES.md" target="" />
+  </files>
+</package>

@@ -1,0 +1,129 @@
+using AllegroApi.Clients;
+using AllegroApi.Http;
+using AllegroApi.Models.Shipping;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class ShippingClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly ShippingClient _client;
+
+    public ShippingClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApi.Configuration.AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new ShippingClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task GetShippingRatesAsync_ReturnsRates()
+    {
+        // Arrange
+        var expectedResponse = new ShippingRatesListResponse
+        {
+            ShippingRates = new List<ShippingRateSummary>
+            {
+                new ShippingRateSummary { Id = "rate1", Name = "Standard Shipping" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetShippingRatesAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ShippingRates.Should().HaveCount(1);
+        result.ShippingRates![0].Id.Should().Be("rate1");
+    }
+
+    [Fact]
+    public async Task GetShippingRateAsync_WithValidId_ReturnsRate()
+    {
+        // Arrange
+        var expectedRate = new ShippingRatesSet
+        {
+            Id = "rate2",
+            Name = "Express Shipping"
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedRate);
+
+        // Act
+        var result = await _client.GetShippingRateAsync("rate2");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("rate2");
+        result.Name.Should().Be("Express Shipping");
+    }
+
+    [Fact]
+    public async Task GetDeliveryMethodsAsync_ReturnsMethods()
+    {
+        // Arrange
+        var expectedResponse = new DeliveryMethodsResponse
+        {
+            DeliveryMethods = new List<DeliveryMethod>
+            {
+                new DeliveryMethod { Id = "method1", Name = "Courier" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetDeliveryMethodsAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.DeliveryMethods.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetShippingRateAsync_WithNullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _client.GetShippingRateAsync(null!));
+    }
+}

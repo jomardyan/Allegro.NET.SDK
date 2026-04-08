@@ -1,0 +1,103 @@
+using AllegroApi.Clients;
+using AllegroApi.Http;
+using AllegroApi.Models.PointsOfService;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class PointsOfServiceClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly PointsOfServiceClient _client;
+
+    public PointsOfServiceClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApi.Configuration.AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new PointsOfServiceClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task GetPointsOfServiceAsync_ReturnsPoints()
+    {
+        // Arrange
+        var expectedResponse = new PointsOfServiceResponse
+        {
+            PointsOfService = new List<PointOfServiceDto>
+            {
+                new PointOfServiceDto { Id = "pos1", Name = "Pickup Point 1" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetPointsOfServiceAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.PointsOfService.Should().HaveCount(1);
+        result.PointsOfService![0].Id.Should().Be("pos1");
+    }
+
+    [Fact]
+    public async Task GetPointOfServiceAsync_WithValidId_ReturnsPoint()
+    {
+        // Arrange
+        var expectedPoint = new PointOfServiceDto { Id = "pos2", Name = "Pickup Point 2" };
+        SetupHttpResponse(HttpStatusCode.OK, expectedPoint);
+
+        // Act
+        var result = await _client.GetPointOfServiceAsync("pos2");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("pos2");
+    }
+
+    [Fact]
+    public async Task GetPointOfServiceAsync_WithNullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _client.GetPointOfServiceAsync(null!));
+    }
+}

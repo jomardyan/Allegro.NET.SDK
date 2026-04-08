@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6952961D-0525-487D-963F-4A5485C5EF64}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllegroApi", "src\AllegroApi\AllegroApi.csproj", "{C358A650-ED48-4F71-AC22-DDAE23E790C3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6EE1EADC-FF1B-493D-9867-185942C20C81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllegroApi.Tests", "tests\AllegroApi.Tests\AllegroApi.Tests.csproj", "{EEB337A3-9927-44AE-86D3-03343A6354F7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C358A650-ED48-4F71-AC22-DDAE23E790C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C358A650-ED48-4F71-AC22-DDAE23E790C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C358A650-ED48-4F71-AC22-DDAE23E790C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C358A650-ED48-4F71-AC22-DDAE23E790C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEB337A3-9927-44AE-86D3-03343A6354F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEB337A3-9927-44AE-86D3-03343A6354F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEB337A3-9927-44AE-86D3-03343A6354F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEB337A3-9927-44AE-86D3-03343A6354F7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C358A650-ED48-4F71-AC22-DDAE23E790C3} = {6952961D-0525-487D-963F-4A5485C5EF64}
+		{EEB337A3-9927-44AE-86D3-03343A6354F7} = {6EE1EADC-FF1B-493D-9867-185942C20C81}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,103 @@
+using AllegroApi.Clients;
+using AllegroApi.Http;
+using AllegroApi.Models.BatchOperations;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class BatchOperationsClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly BatchOperationsClient _client;
+
+    public BatchOperationsClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApi.Configuration.AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new BatchOperationsClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _httpClient.Dispose();
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    [Fact]
+    public async Task GetBatchOperationsAsync_ReturnsOperations()
+    {
+        // Arrange
+        var expectedResponse = new BatchOperationsResponse
+        {
+            Operations = new List<BatchOperationDto>
+            {
+                new BatchOperationDto { Id = "op1", Status = "COMPLETED" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetBatchOperationsAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Operations.Should().HaveCount(1);
+        result.Operations![0].Id.Should().Be("op1");
+    }
+
+    [Fact]
+    public async Task GetBatchOperationAsync_WithValidId_ReturnsOperation()
+    {
+        // Arrange
+        var expectedOperation = new BatchOperationDto { Id = "op2", Status = "IN_PROGRESS" };
+        SetupHttpResponse(HttpStatusCode.OK, expectedOperation);
+
+        // Act
+        var result = await _client.GetBatchOperationAsync("op2");
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("op2");
+        result.Status.Should().Be("IN_PROGRESS");
+    }
+
+    [Fact]
+    public async Task GetBatchOperationAsync_WithNullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _client.GetBatchOperationAsync(null!));
+    }
+}

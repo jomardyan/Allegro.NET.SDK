@@ -1,0 +1,540 @@
+using AllegroApi.Clients;
+using AllegroApi.Configuration;
+using AllegroApi.Http;
+using AllegroApi.Models.Fulfillment;
+using FluentAssertions;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace AllegroApi.Tests.Clients;
+
+public class FulfillmentClientTests : IDisposable
+{
+    private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly AllegroHttpClient _allegroHttpClient;
+    private readonly FulfillmentClient _client;
+
+    public FulfillmentClientTests()
+    {
+        _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
+        {
+            BaseAddress = new Uri("https://api.allegro.pl")
+        };
+        var options = new AllegroApiOptions
+        {
+            AccessToken = "test-token",
+            BaseUrl = "https://api.allegro.pl"
+        };
+        _allegroHttpClient = new AllegroHttpClient(_httpClient, options);
+        _client = new FulfillmentClient(_allegroHttpClient);
+    }
+
+    public void Dispose()
+    {
+        _allegroHttpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void SetupHttpResponse<T>(HttpStatusCode statusCode, T? responseObject)
+    {
+        var json = JsonSerializer.Serialize(responseObject);
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    private void SetupHttpResponseWithLocation(HttpStatusCode statusCode, string locationUrl)
+    {
+        var response = new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent("", Encoding.UTF8, "application/json")
+        };
+        response.Headers.Location = new Uri(locationUrl, UriKind.Relative);
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    #region Advance Ship Notices Tests
+
+    [Fact]
+    public async Task GetAdvanceShipNoticesAsync_ReturnsNoticesList()
+    {
+        // Arrange
+        var expectedResponse = new AdvanceShipNoticeList
+        {
+            AdvanceShipNotices = new List<AdvanceShipNotice>
+            {
+                new AdvanceShipNotice { Id = "asn-1", Status = "IN_TRANSIT" },
+                new AdvanceShipNotice { Id = "asn-2", Status = "COMPLETED" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetAdvanceShipNoticesAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.AdvanceShipNotices.Should().HaveCount(2);
+        result.AdvanceShipNotices![0].Status.Should().Be("IN_TRANSIT");
+    }
+
+    [Fact]
+    public async Task CreateAdvanceShipNoticeAsync_ValidRequest_ReturnsCreatedNotice()
+    {
+        // Arrange
+        var request = new CreateAdvanceShipNoticeRequest
+        {
+            Name = "Test ASN",
+            HandlingUnit = "PALLETS"
+        };
+        var expectedResponse = new AdvanceShipNoticeResponse
+        {
+            Id = "asn-123",
+            Status = "DRAFT"
+        };
+        SetupHttpResponse(HttpStatusCode.Created, expectedResponse);
+
+        // Act
+        var result = await _client.CreateAdvanceShipNoticeAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be("asn-123");
+        result.Status.Should().Be("DRAFT");
+    }
+
+    [Fact]
+    public async Task CreateAdvanceShipNoticeAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.CreateAdvanceShipNoticeAsync(null!));
+    }
+
+    [Fact]
+    public async Task GetAdvanceShipNoticeAsync_ValidId_ReturnsNotice()
+    {
+        // Arrange
+        var asnId = "asn-456";
+        var expectedResponse = new AdvanceShipNoticeResponse
+        {
+            Id = asnId,
+            Status = "UNPACKING"
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetAdvanceShipNoticeAsync(asnId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(asnId);
+    }
+
+    [Fact]
+    public async Task GetAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetAdvanceShipNoticeAsync(null!));
+    }
+
+    [Fact]
+    public async Task UpdateAdvanceShipNoticeAsync_ValidData_CompletesSuccessfully()
+    {
+        // Arrange
+        var asnId = "asn-789";
+        var request = new UpdateAdvanceShipNoticeRequest
+        {
+            Name = "Updated ASN"
+        };
+        SetupHttpResponse(HttpStatusCode.NoContent, (object?)null);
+
+        // Act
+        await _client.UpdateAdvanceShipNoticeAsync(asnId, request);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task UpdateAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var request = new UpdateAdvanceShipNoticeRequest();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.UpdateAdvanceShipNoticeAsync(null!, request));
+    }
+
+    [Fact]
+    public async Task UpdateAdvanceShipNoticeAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.UpdateAdvanceShipNoticeAsync("asn-id", null!));
+    }
+
+    [Fact]
+    public async Task CancelAdvanceShipNoticeAsync_ValidId_CompletesSuccessfully()
+    {
+        // Arrange
+        var asnId = "asn-cancel";
+        SetupHttpResponse(HttpStatusCode.NoContent, (object?)null);
+
+        // Act
+        await _client.CancelAdvanceShipNoticeAsync(asnId);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task CancelAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.CancelAdvanceShipNoticeAsync(null!));
+    }
+
+    [Fact]
+    public async Task SubmitAdvanceShipNoticeAsync_ValidId_CompletesSuccessfully()
+    {
+        // Arrange
+        var asnId = "asn-submit";
+        SetupHttpResponse(HttpStatusCode.NoContent, (object?)null);
+
+        // Act
+        await _client.SubmitAdvanceShipNoticeAsync(asnId);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task SubmitAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.SubmitAdvanceShipNoticeAsync(null!));
+    }
+
+    [Fact]
+    public async Task GetAdvanceShipNoticeReceivingStateAsync_ValidId_ReturnsState()
+    {
+        // Arrange
+        var asnId = "asn-state";
+        var expectedResponse = new AdvanceShipNoticeReceivingState
+        {
+            Status = "RECEIVING"
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetAdvanceShipNoticeReceivingStateAsync(asnId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Status.Should().Be("RECEIVING");
+    }
+
+    [Fact]
+    public async Task GetAdvanceShipNoticeReceivingStateAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetAdvanceShipNoticeReceivingStateAsync(null!));
+    }
+
+    [Fact]
+    public async Task GetAdvanceShipNoticeLabelsAsync_ValidId_ReturnsLabelData()
+    {
+        // Arrange
+        var asnId = "asn-labels";
+        var expectedData = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // PDF header
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(expectedData)
+        };
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+
+        // Act
+        var result = await _client.GetAdvanceShipNoticeLabelsAsync(asnId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public async Task GetAdvanceShipNoticeLabelsAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetAdvanceShipNoticeLabelsAsync(null!));
+    }
+
+    #endregion
+
+    #region Stock Management Tests
+
+    [Fact]
+    public async Task GetFulfillmentStockAsync_ReturnsStockList()
+    {
+        // Arrange
+        var expectedResponse = new FulfillmentStockList
+        {
+            Items = new List<FulfillmentStockItem>
+            {
+                new FulfillmentStockItem { Ean = "1234567890123", Available = 100 },
+                new FulfillmentStockItem { Ean = "9876543210987", Available = 50 }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetFulfillmentStockAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(2);
+        result.Items![0].Available.Should().Be(100);
+    }
+
+    #endregion
+
+    #region Order Parcels Tests
+
+    [Fact]
+    public async Task GetFulfillmentOrderParcelsAsync_ValidOrderId_ReturnsParcels()
+    {
+        // Arrange
+        var orderId = "order-123";
+        var expectedResponse = new FulfillmentOrderParcels
+        {
+            Parcels = new List<FulfillmentParcel>
+            {
+                new FulfillmentParcel { Id = "parcel-1", TrackingNumber = "TRACK123" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetFulfillmentOrderParcelsAsync(orderId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Parcels.Should().HaveCount(1);
+        result.Parcels![0].TrackingNumber.Should().Be("TRACK123");
+    }
+
+    [Fact]
+    public async Task GetFulfillmentOrderParcelsAsync_NullOrderId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetFulfillmentOrderParcelsAsync(null!));
+    }
+
+    #endregion
+
+    #region Available Products Tests
+
+    [Fact]
+    public async Task GetAvailableProductsAsync_ReturnsProducts()
+    {
+        // Arrange
+        var expectedResponse = new AvailableProductsList
+        {
+            Products = new List<AvailableProduct>
+            {
+                new AvailableProduct { Ean = "1234567890123", Name = "Product 1" }
+            }
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetAvailableProductsAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Products.Should().HaveCount(1);
+    }
+
+    #endregion
+
+    #region Tax ID Management Tests
+
+    [Fact]
+    public async Task AddTaxIdToAdvanceShipNoticeAsync_ValidData_CompletesSuccessfully()
+    {
+        // Arrange
+        var asnId = "asn-tax";
+        var request = new TaxIdRequest
+        {
+            TaxId = "1234567890"
+        };
+        SetupHttpResponse(HttpStatusCode.NoContent, (object?)null);
+
+        // Act
+        await _client.AddTaxIdToAdvanceShipNoticeAsync(asnId, request);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task AddTaxIdToAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var request = new TaxIdRequest();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.AddTaxIdToAdvanceShipNoticeAsync(null!, request));
+    }
+
+    [Fact]
+    public async Task AddTaxIdToAdvanceShipNoticeAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.AddTaxIdToAdvanceShipNoticeAsync("asn-id", null!));
+    }
+
+    [Fact]
+    public async Task UpdateTaxIdInAdvanceShipNoticeAsync_ValidData_CompletesSuccessfully()
+    {
+        // Arrange
+        var asnId = "asn-tax-update";
+        var request = new TaxIdRequest
+        {
+            TaxId = "0987654321"
+        };
+        SetupHttpResponse(HttpStatusCode.NoContent, (object?)null);
+
+        // Act
+        await _client.UpdateTaxIdInAdvanceShipNoticeAsync(asnId, request);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task UpdateTaxIdInAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var request = new TaxIdRequest();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.UpdateTaxIdInAdvanceShipNoticeAsync(null!, request));
+    }
+
+    [Fact]
+    public async Task UpdateTaxIdInAdvanceShipNoticeAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.UpdateTaxIdInAdvanceShipNoticeAsync("asn-id", null!));
+    }
+
+    [Fact]
+    public async Task GetTaxIdFromAdvanceShipNoticeAsync_ValidId_ReturnsTaxId()
+    {
+        // Arrange
+        var asnId = "asn-tax-get";
+        var expectedResponse = new TaxIdResponse
+        {
+            TaxId = "TAX123456"
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetTaxIdFromAdvanceShipNoticeAsync(asnId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.TaxId.Should().Be("TAX123456");
+    }
+
+    [Fact]
+    public async Task GetTaxIdFromAdvanceShipNoticeAsync_NullId_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.GetTaxIdFromAdvanceShipNoticeAsync(null!));
+    }
+
+    #endregion
+
+    #region Removal Preferences Tests
+
+    [Fact]
+    public async Task GetRemovalPreferencesAsync_ReturnsPreferences()
+    {
+        // Arrange
+        var expectedResponse = new RemovalPreferences
+        {
+            Strategy = "FIFO"
+        };
+        SetupHttpResponse(HttpStatusCode.OK, expectedResponse);
+
+        // Act
+        var result = await _client.GetRemovalPreferencesAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Strategy.Should().Be("FIFO");
+    }
+
+    [Fact]
+    public async Task CreateRemovalPreferencesAsync_ValidRequest_CompletesSuccessfully()
+    {
+        // Arrange
+        var request = new CreateRemovalPreferencesRequest
+        {
+            Strategy = "LIFO"
+        };
+        SetupHttpResponse(HttpStatusCode.Created, (object?)null);
+
+        // Act
+        await _client.CreateRemovalPreferencesAsync(request);
+
+        // Assert - no exception thrown
+    }
+
+    [Fact]
+    public async Task CreateRemovalPreferencesAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.CreateRemovalPreferencesAsync(null!));
+    }
+
+    #endregion
+}
