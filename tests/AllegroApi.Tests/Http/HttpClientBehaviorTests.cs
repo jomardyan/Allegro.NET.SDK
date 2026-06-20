@@ -105,15 +105,15 @@ public class HttpClientBehaviorTests : IDisposable
         byte[]? sentBytes = null;
         _handler.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-            .Callback<HttpRequestMessage, CancellationToken>((req, _) =>
+            .Returns<HttpRequestMessage, CancellationToken>(async (req, ct) =>
             {
                 captured = req;
-                sentBytes = req.Content!.ReadAsByteArrayAsync().GetAwaiter().GetResult();
-            })
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.Created,
-                Content = new StringContent(JsonSerializer.Serialize(new ImageUploadResponse { Location = "https://x/img.jpg" }), Encoding.UTF8, "application/json")
+                sentBytes = await req.Content!.ReadAsByteArrayAsync(ct);
+                return new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.Created,
+                    Content = new StringContent(JsonSerializer.Serialize(new ImageUploadResponse { Location = "https://x/img.jpg" }), Encoding.UTF8, "application/json")
+                };
             });
 
         var client = new ImageClient(_http, "https://upload.allegro.pl");

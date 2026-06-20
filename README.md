@@ -72,7 +72,7 @@ dotnet add package AllegroApi
 
 ### Package Reference
 ```xml
-<PackageReference Include="AllegroApi" Version="2.0.0" />
+<PackageReference Include="AllegroApi" Version="2.2.0" />
 ```
 
 **Requirements:** .NET 8.0 or higher
@@ -1068,6 +1068,22 @@ Contributions are welcome. Please follow these guidelines:
 ---
 
 ## Release Notes
+
+### Version 2.2.0 (June 2026)
+
+Closes the remaining gaps against the latest Allegro REST API spec (100% documented coverage — 266/266 operations) and hardens the SDK for production.
+
+- **New endpoints:** automatic pricing rules (new `PriceAutomation` client), messaging attachments & new-message/thread-read, order events & parcel tracking, Allegro Prices account participation & subsidy commands, bundle/loyalty/tag management, offer rating & unfilled parameters, category product parameters, attachment upload/download and claim status changes.
+- **OAuth2 client credentials:** application token is acquired and refreshed automatically when only `ClientId`/`ClientSecret` are configured.
+- **Dependency injection:** new `services.AddAllegroApi(...)` extension backed by `IHttpClientFactory`.
+- **Reliability:** network/timeout errors now surface as `AllegroNetworkException`/`AllegroTimeoutException` and are retried; `ConfigureAwait(false)` applied library-wide.
+- **Bug fixes:** corrected messaging, delivery-settings, rating-removal endpoint paths and binary image upload.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for full details.
+
+### Version 2.1.0 (March 2026)
+
+Adds Allegro Prices / Alle Discount management (`AllegroPricesClient`) and marketplace information (`MarketplacesClient`), raising coverage to 97%+.
 
 ### Version 2.0.0 (October 14, 2025)
 
