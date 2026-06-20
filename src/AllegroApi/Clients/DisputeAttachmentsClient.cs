@@ -41,7 +41,7 @@ public class DisputeAttachmentsClient
             declaration,
             null,
             cancellationToken);
-        var id = await _httpClient.ReadJsonAsync<DisputeAttachmentId>(response);
+        var id = await _httpClient.ReadJsonAsync<DisputeAttachmentId>(response).ConfigureAwait(false);
         var uploadUrl = response.Headers.Location?.ToString() ?? string.Empty;
         return (id, uploadUrl);
     }
@@ -67,7 +67,7 @@ public class DisputeAttachmentsClient
         ArgumentNullException.ThrowIfNull(uploadUrl);
         ArgumentNullException.ThrowIfNull(fileBytes);
         ArgumentNullException.ThrowIfNull(contentType);
-        var result = await _httpClient.PutRawAsync(uploadUrl, fileBytes, contentType, cancellationToken);
+        var result = await _httpClient.PutRawAsync(uploadUrl, fileBytes, contentType, cancellationToken).ConfigureAwait(false);
         return result.IsSuccessStatusCode;
     }
 
@@ -87,7 +87,7 @@ public class DisputeAttachmentsClient
     {
         ArgumentNullException.ThrowIfNull(attachmentId);
         // GetRawAsync already maps non-success responses to the appropriate Allegro exception types.
-        var response = await _httpClient.GetRawAsync($"/sale/dispute-attachments/{attachmentId}", null, cancellationToken);
-        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var response = await _httpClient.GetRawAsync($"/sale/dispute-attachments/{attachmentId}", null, cancellationToken).ConfigureAwait(false);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 }

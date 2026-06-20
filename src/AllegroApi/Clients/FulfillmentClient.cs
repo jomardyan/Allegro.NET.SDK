@@ -168,7 +168,7 @@ public class FulfillmentClient
             null,
             cancellationToken);
 
-        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

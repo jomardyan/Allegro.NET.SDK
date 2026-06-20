@@ -43,11 +43,19 @@ Manage automatic pricing rules:
 - Category product parameters and scheduled category parameter changes
 - Upload binary attachments for after-sales service conditions and post-purchase issues; download issue attachments; change claim status
 
+### Production Hardening
+
+- **OAuth2 client-credentials grant:** When only `ClientId`/`ClientSecret` are configured (no `AccessToken`), the SDK now automatically acquires an application token from `TokenEndpoint`, caches it, and refreshes it before expiry (and once on a 401 when `EnableAutoTokenRefresh` is set). Previously client-credentials-only configuration sent unauthenticated requests. New `IAllegroTokenProvider`, `ClientCredentialsTokenProvider`, `StaticTokenProvider`, and `AllegroAuthenticationHandler` types.
+- **Dependency injection / IHttpClientFactory:** New `services.AddAllegroApi(options => ...)` extension registers `AllegroApiClient` as a typed client with a properly managed `HttpClient` lifecycle. A new `AllegroApiClient(HttpClient, AllegroApiOptions, ILoggerFactory?)` constructor supports factory-managed clients.
+- **Reliable retries & exceptions:** Network failures now surface as `AllegroNetworkException` and request timeouts as `AllegroTimeoutException`, and both are retried with backoff. Caller-requested cancellation propagates as `OperationCanceledException`. Previously these were swallowed into a generic exception and never retried.
+- **`ConfigureAwait(false)`** applied across the library to avoid deadlocks in synchronous host contexts.
+
 ### Bug Fixes
 
 - **Messaging:** `GetMessageAsync` now calls `GET /messaging/messages/{messageId}` (previously used a non-existent thread-scoped path); replaced the incorrect `mark-read` call with `MarkThreadReadAsync` (`PUT /messaging/threads/{threadId}/read`).
 - **Shipping:** `GetDeliverySettingsAsync`/`UpdateDeliverySettingsAsync` now use `/sale/delivery-settings` with the `marketplace.id` query parameter and a request body (previously used an incorrect path segment).
 - **Users:** `RequestRatingRemovalAsync` now performs `PUT /sale/user-ratings/{ratingId}/removal` with the correct request body (previously POSTed to a non-existent `removal-request` path).
+- **Images:** `UploadImageAsync`/`UploadImageFromStreamAsync` now POST the raw image bytes with the correct content type to the upload host (`upload.allegro.pl`). Previously they base64-encoded the bytes into a JSON `url` field and never used the upload host, so binary uploads could not succeed.
 - Removed a build warning (`CS1998`) in the HTTP client.
 
 ### Compatibility

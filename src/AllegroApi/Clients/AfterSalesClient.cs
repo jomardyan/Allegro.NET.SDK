@@ -290,7 +290,7 @@ public class AfterSalesClient
             fileBytes,
             "application/pdf",
             cancellationToken);
-        return await _httpClient.ReadJsonAsync<AfterSalesServicesAttachment>(response);
+        return await _httpClient.ReadJsonAsync<AfterSalesServicesAttachment>(response).ConfigureAwait(false);
     }
 
     #endregion

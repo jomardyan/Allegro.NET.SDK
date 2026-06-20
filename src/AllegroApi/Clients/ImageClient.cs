@@ -70,8 +70,8 @@ public class ImageClient
         // Binary image upload uses a dedicated host (upload.allegro.pl) and expects the raw
         // image bytes with the appropriate image/* content type, not a JSON payload.
         var url = $"{_uploadBaseUrl.TrimEnd('/')}/sale/images";
-        var response = await _httpClient.PostRawBytesAsync(url, imageData, contentType, cancellationToken);
-        return await _httpClient.ReadJsonAsync<ImageUploadResponse>(response);
+        var response = await _httpClient.PostRawBytesAsync(url, imageData, contentType, cancellationToken).ConfigureAwait(false);
+        return await _httpClient.ReadJsonAsync<ImageUploadResponse>(response).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public class ImageClient
             throw new ArgumentNullException(nameof(stream));
 
         using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream, cancellationToken);
-        return await UploadImageAsync(memoryStream.ToArray(), contentType, cancellationToken);
+        await stream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
+        return await UploadImageAsync(memoryStream.ToArray(), contentType, cancellationToken).ConfigureAwait(false);
     }
 }

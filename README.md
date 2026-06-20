@@ -104,6 +104,34 @@ var options = new AllegroApiOptions
 var customClient = new AllegroApiClient(options);
 ```
 
+### Dependency Injection (recommended for ASP.NET Core / hosts)
+
+```csharp
+// Registers AllegroApiClient as a typed client backed by IHttpClientFactory.
+services.AddAllegroApi(options =>
+{
+    options.AccessToken = "your-access-token";
+    // …or use the client-credentials grant (auto-acquired & refreshed):
+    // options.ClientId = "your-client-id";
+    // options.ClientSecret = "your-client-secret";
+});
+
+// Then inject AllegroApiClient anywhere:
+public class MyService(AllegroApiClient allegro) { /* ... */ }
+```
+
+### OAuth2 client credentials (application access)
+
+```csharp
+// No pre-acquired token needed — the SDK obtains and refreshes one automatically.
+var options = new AllegroApiOptions
+{
+    ClientId = "your-client-id",
+    ClientSecret = "your-client-secret"
+};
+using var client = new AllegroApiClient(options);
+```
+
 ### Basic Operations
 
 ```csharp

@@ -209,7 +209,7 @@ public class MessagingClient
             fileBytes,
             contentType,
             cancellationToken);
-        return await _httpClient.ReadJsonAsync<MessageAttachmentId>(response);
+        return await _httpClient.ReadJsonAsync<MessageAttachmentId>(response).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -227,6 +227,6 @@ public class MessagingClient
             $"/messaging/message-attachments/{attachmentId}",
             null,
             cancellationToken);
-        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 }

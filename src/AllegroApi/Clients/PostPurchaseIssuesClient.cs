@@ -166,7 +166,7 @@ public class PostPurchaseIssuesClient
             fileBytes,
             contentType,
             cancellationToken);
-        return await _httpClient.ReadJsonAsync<IssueAttachmentId>(response);
+        return await _httpClient.ReadJsonAsync<IssueAttachmentId>(response).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ public class PostPurchaseIssuesClient
             $"/sale/issues/attachments/{attachmentId}",
             null,
             cancellationToken);
-        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
