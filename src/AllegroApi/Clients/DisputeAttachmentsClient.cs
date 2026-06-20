@@ -86,14 +86,8 @@ public class DisputeAttachmentsClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(attachmentId);
+        // GetRawAsync already maps non-success responses to the appropriate Allegro exception types.
         var response = await _httpClient.GetRawAsync($"/sale/dispute-attachments/{attachmentId}", null, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            var content = await response.Content.ReadAsStringAsync();
-            // Use existing public logic: re-run a read to ensure proper exception mapping via HandleResponseAsync
-            // Since GetRawAsync already throws for non-success statuses, we simply throw a generic exception here to be safe.
-            throw new Exception($"Failed to download attachment: {(int)response.StatusCode} {response.ReasonPhrase}");
-        }
-        return await response.Content.ReadAsByteArrayAsync();
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 }

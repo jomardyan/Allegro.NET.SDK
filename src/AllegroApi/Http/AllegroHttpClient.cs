@@ -217,6 +217,31 @@ public class AllegroHttpClient : IDisposable
     }
 
     /// <summary>
+    /// Perform POST request with binary content (byte[]) and return the raw HttpResponseMessage.
+    /// Supports absolute URLs (e.g. the image upload host) as well as relative endpoints.
+    /// </summary>
+    public async Task<HttpResponseMessage> PostRawBytesAsync(
+        string url,
+        byte[] data,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            LogRequest("POST", url);
+            using var content = new ByteArrayContent(data);
+            content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            var response = await _httpClient.PostAsync(url, content, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var contentStr = await response.Content.ReadAsStringAsync();
+                await ThrowAppropriateException(response, contentStr);
+            }
+            return response;
+        }, cancellationToken);
+    }
+
+    /// <summary>
     /// Perform PATCH request
     /// </summary>
     public async Task<TResponse> PatchAsync<TRequest, TResponse>(
@@ -268,28 +293,27 @@ public class AllegroHttpClient : IDisposable
         var attemptCount = 0;
         var maxAttempts = _options.MaxRetryAttempts + 1;
 
-        while (attemptCount < maxAttempts)
+        while (true)
         {
+            attemptCount++;
             try
             {
                 return await action();
             }
             catch (AllegroRateLimitException ex)
             {
-                attemptCount++;
                 if (attemptCount >= maxAttempts)
                     throw;
 
-                var delay = ex.RetryAfterSeconds.HasValue 
+                var delay = ex.RetryAfterSeconds.HasValue
                     ? TimeSpan.FromSeconds(ex.RetryAfterSeconds.Value)
                     : TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
 
                 _logger?.LogWarning($"Rate limit exceeded. Retrying after {delay.TotalSeconds} seconds (attempt {attemptCount}/{maxAttempts})");
                 await Task.Delay(delay, cancellationToken);
             }
-            catch (AllegroServerException) when (attemptCount < maxAttempts)
+            catch (AllegroServerException)
             {
-                attemptCount++;
                 if (attemptCount >= maxAttempts)
                     throw;
 
@@ -297,14 +321,31 @@ public class AllegroHttpClient : IDisposable
                 _logger?.LogWarning($"Server error occurred. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
                 await Task.Delay(delay, cancellationToken);
             }
-            catch (AllegroNetworkException) when (attemptCount < maxAttempts)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                attemptCount++;
+                // Genuine cancellation requested by the caller - propagate as-is.
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
                 if (attemptCount >= maxAttempts)
-                    throw;
+                    throw new AllegroNetworkException("Network error occurred while communicating with the Allegro API", ex);
 
                 var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
                 _logger?.LogWarning($"Network error occurred. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
+                await Task.Delay(delay, cancellationToken);
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Not caller-requested (handled above) - treat as a request timeout.
+                if (attemptCount >= maxAttempts)
+                    throw new AllegroTimeoutException(
+                        $"Request to the Allegro API timed out after {_options.TimeoutSeconds} seconds",
+                        TimeSpan.FromSeconds(_options.TimeoutSeconds),
+                        ex);
+
+                var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
+                _logger?.LogWarning($"Request timed out. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
                 await Task.Delay(delay, cancellationToken);
             }
             catch (Exception ex) when (ex is not AllegroApiException)
@@ -312,8 +353,6 @@ public class AllegroHttpClient : IDisposable
                 throw new AllegroApiException("Unexpected error occurred", ex);
             }
         }
-
-        throw new AllegroApiException("Maximum retry attempts exceeded");
     }
 
     private async Task<T> HandleResponseAsync<T>(HttpResponseMessage response)
