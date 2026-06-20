@@ -271,5 +271,27 @@ public class AfterSalesClient
             cancellationToken);
     }
 
+    /// <summary>
+    /// Uploads the binary (PDF) content of a previously declared warranty attachment.
+    /// </summary>
+    /// <param name="attachmentId">The declared attachment identifier.</param>
+    /// <param name="fileBytes">PDF file content as a byte array.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The uploaded attachment details.</returns>
+    public async System.Threading.Tasks.Task<AfterSalesServicesAttachment> UploadAttachmentAsync(
+        string attachmentId,
+        byte[] fileBytes,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(attachmentId);
+        ArgumentNullException.ThrowIfNull(fileBytes);
+        var response = await _httpClient.PutRawAsync(
+            $"/after-sales-service-conditions/attachments/{attachmentId}",
+            fileBytes,
+            "application/pdf",
+            cancellationToken);
+        return await _httpClient.ReadJsonAsync<AfterSalesServicesAttachment>(response);
+    }
+
     #endregion
 }

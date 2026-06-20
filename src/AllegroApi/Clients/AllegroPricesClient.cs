@@ -253,4 +253,132 @@ public class AllegroPricesClient
     }
 
     #endregion
+
+    #region Allegro Prices - Account Participation
+
+    /// <summary>
+    /// Gets the account participation status in the Allegro Prices program.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Participation status per marketplace.</returns>
+    public System.Threading.Tasks.Task<AllegroPricesAccountParticipationResponse> GetAccountParticipationAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return _httpClient.GetAsync<AllegroPricesAccountParticipationResponse>(
+            "/sale/allegro-prices/accounts/participations",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates the account participation in the Allegro Prices program.
+    /// </summary>
+    /// <param name="request">Participation status to set per marketplace.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Updated participation status per marketplace.</returns>
+    public System.Threading.Tasks.Task<AllegroPricesAccountParticipationResponse> UpdateAccountParticipationAsync(
+        AllegroPricesAccountParticipationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PatchAsync<AllegroPricesAccountParticipationRequest, AllegroPricesAccountParticipationResponse>(
+            "/sale/allegro-prices/accounts/participations",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    #endregion
+
+    #region Allegro Prices - Offers Status & Subsidy Commands
+
+    /// <summary>
+    /// Queries the Allegro Prices status of offers.
+    /// </summary>
+    /// <param name="request">Query filters and pagination.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Offers matching the query with their Allegro Prices status.</returns>
+    public System.Threading.Tasks.Task<OfferStatusQueryResponseDto> QueryOffersAsync(
+        OfferStatusQueryRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PostAsync<OfferStatusQueryRequestDto, OfferStatusQueryResponseDto>(
+            "/sale/allegro-prices/offers-queries",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Submits a command to exclude offers from Allegro Prices.
+    /// </summary>
+    /// <param name="command">Offers to exclude.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command result with identifier and status.</returns>
+    public System.Threading.Tasks.Task<SubsidyManageOffersCommandResult> ExcludeOffersAsync(
+        SubsidyExcludeOffersCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return _httpClient.PostAsync<SubsidyExcludeOffersCommand, SubsidyManageOffersCommandResult>(
+            "/sale/allegro-prices/offers/exclusion-commands",
+            command,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the status of an exclude-offers command.
+    /// </summary>
+    /// <param name="commandId">Command identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command status with per-offer results.</returns>
+    public System.Threading.Tasks.Task<SubsidyExcludeOffersCommandPreview> GetExcludeOffersCommandStatusAsync(
+        string commandId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(commandId);
+        return _httpClient.GetAsync<SubsidyExcludeOffersCommandPreview>(
+            $"/sale/allegro-prices/offers/exclusion-commands/{commandId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Submits a command to enroll offers into Allegro Prices.
+    /// </summary>
+    /// <param name="command">Offers to submit.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command result with identifier and status.</returns>
+    public System.Threading.Tasks.Task<SubsidyManageOffersCommandResult> SubmitOffersToAllegroPricesAsync(
+        SubsidySubmitOffersCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return _httpClient.PostAsync<SubsidySubmitOffersCommand, SubsidyManageOffersCommandResult>(
+            "/sale/allegro-prices/offers/submit-offer-commands",
+            command,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the status of a submit-offers command.
+    /// </summary>
+    /// <param name="commandId">Command identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command status with per-offer results.</returns>
+    public System.Threading.Tasks.Task<SubsidySubmitOffersCommandPreview> GetSubmitOffersCommandStatusAsync(
+        string commandId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(commandId);
+        return _httpClient.GetAsync<SubsidySubmitOffersCommandPreview>(
+            $"/sale/allegro-prices/offers/submit-offer-commands/{commandId}",
+            null,
+            cancellationToken);
+    }
+
+    #endregion
 }

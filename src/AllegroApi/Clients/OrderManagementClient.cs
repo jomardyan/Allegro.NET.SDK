@@ -147,4 +147,129 @@ public class OrderManagementClient
         
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
+
+    /// <summary>
+    /// Gets order events (a stream of changes to the seller's orders).
+    /// </summary>
+    /// <param name="from">Identifier of the last processed event; only newer events are returned.</param>
+    /// <param name="types">Optional event types to filter by.</param>
+    /// <param name="limit">Maximum number of events to return (1-1000).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of order events.</returns>
+    public System.Threading.Tasks.Task<OrderEventsList> GetOrderEventsAsync(
+        string? from = null,
+        IEnumerable<string>? types = null,
+        int? limit = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(from))
+            query.Add($"from={Uri.EscapeDataString(from)}");
+        if (types != null)
+            query.AddRange(types.Select(t => $"type={Uri.EscapeDataString(t)}"));
+        if (limit.HasValue)
+            query.Add($"limit={limit.Value}");
+
+        var endpoint = query.Count > 0 ? $"/order/events?{string.Join("&", query)}" : "/order/events";
+        return _httpClient.GetAsync<OrderEventsList>(endpoint, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the list of parcel tracking numbers (waybills) attached to an order.
+    /// </summary>
+    /// <param name="orderId">Order (checkout form) identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Parcel tracking numbers attached to the order.</returns>
+    public System.Threading.Tasks.Task<CheckoutFormOrderWaybillResponse> GetOrderShipmentsAsync(
+        string orderId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(orderId);
+        return _httpClient.GetAsync<CheckoutFormOrderWaybillResponse>(
+            $"/order/checkout-forms/{orderId}/shipments",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a parcel tracking number (waybill) to an order.
+    /// </summary>
+    /// <param name="orderId">Order (checkout form) identifier.</param>
+    /// <param name="request">Waybill details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created waybill.</returns>
+    public System.Threading.Tasks.Task<CheckoutFormAddWaybillCreated> AddOrderShipmentAsync(
+        string orderId,
+        CheckoutFormAddWaybillRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(orderId);
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PostAsync<CheckoutFormAddWaybillRequest, CheckoutFormAddWaybillCreated>(
+            $"/order/checkout-forms/{orderId}/shipments",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the carrier parcel tracking history for one or more waybills.
+    /// </summary>
+    /// <param name="carrierId">Carrier identifier.</param>
+    /// <param name="waybills">Waybill (tracking) numbers to query.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Tracking history for the requested waybills.</returns>
+    public System.Threading.Tasks.Task<CarrierParcelTrackingResponse> GetParcelTrackingAsync(
+        string carrierId,
+        IEnumerable<string> waybills,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(carrierId);
+        ArgumentNullException.ThrowIfNull(waybills);
+        var qs = string.Join("&", waybills.Select(w => $"waybill={Uri.EscapeDataString(w)}"));
+        return _httpClient.GetAsync<CarrierParcelTrackingResponse>(
+            $"/order/carriers/{carrierId}/tracking?{qs}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets Allegro pickup/drop-off points.
+    /// </summary>
+    /// <param name="carriers">Optional carrier identifiers to filter by.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of Allegro pickup/drop-off points.</returns>
+    public System.Threading.Tasks.Task<AllegroPickupDropOffPointsResponse> GetAllegroPickupDropOffPointsAsync(
+        IEnumerable<string>? carriers = null,
+        CancellationToken cancellationToken = default)
+    {
+        var endpoint = "/order/carriers/ALLEGRO/points";
+        if (carriers != null)
+        {
+            var qs = string.Join("&", carriers.Select(c => $"carriers={Uri.EscapeDataString(c)}"));
+            if (qs.Length > 0)
+                endpoint += $"?{qs}";
+        }
+        return _httpClient.GetAsync<AllegroPickupDropOffPointsResponse>(endpoint, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Uploads a URL to a billing document associated with an order.
+    /// </summary>
+    /// <param name="orderId">Order identifier.</param>
+    /// <param name="link">Billing document link.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task UploadBillingDocumentLinkAsync(
+        string orderId,
+        NewOrderBillingDocumentLink link,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(orderId);
+        ArgumentNullException.ThrowIfNull(link);
+        return _httpClient.PostAsync<NewOrderBillingDocumentLink>(
+            $"/order/{orderId}/billing-documents/links",
+            link,
+            null,
+            cancellationToken);
+    }
 }

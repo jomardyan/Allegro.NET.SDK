@@ -70,30 +70,34 @@ public class ShippingClient
     }
 
     /// <summary>
-    /// Gets delivery settings for a marketplace.
+    /// Gets the user's delivery settings.
     /// </summary>
-    /// <param name="marketplaceId">The marketplace ID (e.g., "allegro-pl").</param>
+    /// <param name="marketplaceId">Optional marketplace identifier (e.g., "allegro-pl"). When omitted the default marketplace is used.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Delivery settings for the marketplace.</returns>
-    public System.Threading.Tasks.Task<DeliverySettingsResponse> GetDeliverySettingsAsync(string marketplaceId, CancellationToken cancellationToken = default)
+    /// <returns>The user's delivery settings.</returns>
+    public System.Threading.Tasks.Task<DeliverySettingsResponse> GetDeliverySettingsAsync(string? marketplaceId = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(marketplaceId);
-        return _httpClient.GetAsync<DeliverySettingsResponse>($"/sale/delivery-settings/{marketplaceId}", null, cancellationToken);
+        var queryParams = new Dictionary<string, string>();
+        if (!string.IsNullOrEmpty(marketplaceId))
+            queryParams["marketplace.id"] = marketplaceId;
+
+        return _httpClient.GetAsync<DeliverySettingsResponse>(
+            "/sale/delivery-settings",
+            queryParams.Count > 0 ? queryParams : null,
+            cancellationToken);
     }
 
     /// <summary>
-    /// Updates delivery settings for a marketplace.
+    /// Modifies the user's delivery settings.
     /// Rate limit: 200 requests per 60 seconds.
     /// </summary>
-    /// <param name="marketplaceId">The marketplace ID (e.g., "allegro-pl").</param>
-    /// <param name="settings">The updated delivery settings.</param>
+    /// <param name="settings">The updated delivery settings (the target marketplace is specified in the body).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated delivery settings.</returns>
-    public System.Threading.Tasks.Task<DeliverySettingsResponse> UpdateDeliverySettingsAsync(string marketplaceId, DeliverySettingsResponse settings, CancellationToken cancellationToken = default)
+    public System.Threading.Tasks.Task<DeliverySettingsResponse> UpdateDeliverySettingsAsync(DeliverySettingsRequest settings, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(marketplaceId);
         ArgumentNullException.ThrowIfNull(settings);
-        return _httpClient.PutAsync<DeliverySettingsResponse, DeliverySettingsResponse>($"/sale/delivery-settings/{marketplaceId}", settings, null, cancellationToken);
+        return _httpClient.PutAsync<DeliverySettingsRequest, DeliverySettingsResponse>("/sale/delivery-settings", settings, null, cancellationToken);
     }
 
     /// <summary>

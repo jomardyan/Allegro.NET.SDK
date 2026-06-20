@@ -149,4 +149,69 @@ public class CategoryClient
             queryParams,
             cancellationToken);
     }
+
+    /// <summary>
+    /// Gets the product parameters available in a given category.
+    /// </summary>
+    /// <param name="categoryId">Category identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Product parameters available in the category.</returns>
+    public System.Threading.Tasks.Task<CategoryProductParameterList> GetProductParametersAsync(
+        string categoryId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(categoryId);
+        return _httpClient.GetAsync<CategoryProductParameterList>(
+            $"/sale/categories/{categoryId}/product-parameters",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets planned changes in category parameters.
+    /// </summary>
+    /// <param name="scheduledForGte">Return changes scheduled for a date greater than or equal to this value (ISO 8601).</param>
+    /// <param name="scheduledForLte">Return changes scheduled for a date less than or equal to this value (ISO 8601).</param>
+    /// <param name="scheduledAtGte">Return changes scheduled at a date greater than or equal to this value (ISO 8601).</param>
+    /// <param name="scheduledAtLte">Return changes scheduled at a date less than or equal to this value (ISO 8601).</param>
+    /// <param name="types">Optional change types to filter by.</param>
+    /// <param name="offset">Number of elements to skip.</param>
+    /// <param name="limit">Maximum number of elements to return.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Planned category parameter changes.</returns>
+    public System.Threading.Tasks.Task<CategoryParametersScheduledChangesResponse> GetCategoryParametersScheduledChangesAsync(
+        string? scheduledForGte = null,
+        string? scheduledForLte = null,
+        string? scheduledAtGte = null,
+        string? scheduledAtLte = null,
+        IEnumerable<string>? types = null,
+        int? offset = null,
+        int? limit = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(scheduledForGte))
+            query.Add($"scheduledFor.gte={Uri.EscapeDataString(scheduledForGte)}");
+        if (!string.IsNullOrEmpty(scheduledForLte))
+            query.Add($"scheduledFor.lte={Uri.EscapeDataString(scheduledForLte)}");
+        if (!string.IsNullOrEmpty(scheduledAtGte))
+            query.Add($"scheduledAt.gte={Uri.EscapeDataString(scheduledAtGte)}");
+        if (!string.IsNullOrEmpty(scheduledAtLte))
+            query.Add($"scheduledAt.lte={Uri.EscapeDataString(scheduledAtLte)}");
+        if (types != null)
+            query.AddRange(types.Select(t => $"type={Uri.EscapeDataString(t)}"));
+        if (offset.HasValue)
+            query.Add($"offset={offset.Value}");
+        if (limit.HasValue)
+            query.Add($"limit={limit.Value}");
+
+        var endpoint = query.Count > 0
+            ? $"/sale/category-parameters-scheduled-changes?{string.Join("&", query)}"
+            : "/sale/category-parameters-scheduled-changes";
+
+        return _httpClient.GetAsync<CategoryParametersScheduledChangesResponse>(
+            endpoint,
+            null,
+            cancellationToken);
+    }
 }

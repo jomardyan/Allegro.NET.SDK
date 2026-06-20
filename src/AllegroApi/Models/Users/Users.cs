@@ -176,14 +176,62 @@ public record AnswerRatingRequest
 public record RatingRemovalRequest
 {
     /// <summary>
-    /// Reason for removal request.
+    /// Details of the removal request.
     /// </summary>
-    [JsonPropertyName("reason")]
-    public string? Reason { get; init; }
+    [JsonPropertyName("request")]
+    public RatingRemovalRequestDetails? Request { get; init; }
+}
+
+/// <summary>
+/// Details of a rating removal request.
+/// </summary>
+public record RatingRemovalRequestDetails
+{
+    /// <summary>
+    /// Message containing the explanation for removing the rating (max 500 characters).
+    /// </summary>
+    [JsonPropertyName("message")]
+    public string? Message { get; init; }
+}
+
+/// <summary>
+/// Response to a rating removal request.
+/// </summary>
+public record UserRatingRemoval
+{
+    /// <summary>
+    /// Date until which a removal request can be submitted (ISO 8601).
+    /// </summary>
+    [JsonPropertyName("possibleTo")]
+    public string? PossibleTo { get; init; }
 
     /// <summary>
-    /// Additional explanation.
+    /// The submitted removal request, when present.
     /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; init; }
+    [JsonPropertyName("request")]
+    public UserRatingRemovalInfo? Request { get; init; }
+}
+
+/// <summary>
+/// Information about a submitted rating removal request.
+/// </summary>
+public record UserRatingRemovalInfo
+{
+    /// <summary>
+    /// Date the removal request was created (ISO 8601).
+    /// </summary>
+    [JsonPropertyName("createdAt")]
+    public string? CreatedAt { get; init; }
+
+    /// <summary>
+    /// Message associated with the removal request.
+    /// </summary>
+    [JsonPropertyName("message")]
+    public string? Message { get; init; }
+
+    /// <summary>
+    /// Source of the removal request (SELLER or ADMIN).
+    /// </summary>
+    [JsonPropertyName("source")]
+    public string? Source { get; init; }
 }

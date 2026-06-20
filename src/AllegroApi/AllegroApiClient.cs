@@ -190,6 +190,11 @@ public class AllegroApiClient : IDisposable
     public ClassifiedsClient Classifieds { get; }
 
     /// <summary>
+    /// Client for automatic pricing (price automation) rules
+    /// </summary>
+    public PriceAutomationClient PriceAutomation { get; }
+
+    /// <summary>
     /// Create a new instance of AllegroApiClient
     /// </summary>
     public AllegroApiClient(AllegroApiOptions options, ILoggerFactory? loggerFactory = null)
@@ -242,7 +247,8 @@ public class AllegroApiClient : IDisposable
     Badges = new BadgesClient(_httpClient);
     Classifieds = new ClassifiedsClient(_httpClient);
     DisputeAttachments = new DisputeAttachmentsClient(_httpClient);
-        
+    PriceAutomation = new PriceAutomationClient(_httpClient);
+
         // Image upload uses a different base URL (upload.allegro.pl)
         var uploadBaseUrl = options.BaseUrl.Contains("sandbox") 
             ? "https://upload.allegro.pl.allegrosandbox.pl" 

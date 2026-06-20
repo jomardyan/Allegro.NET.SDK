@@ -117,6 +117,48 @@ public record DeliverySettingsResponse
 
     [JsonPropertyName("customCost")]
     public DeliveryCustomCost? CustomCost { get; init; }
+
+    /// <summary>
+    /// Date and time of the last delivery settings update (ISO 8601).
+    /// </summary>
+    [JsonPropertyName("updatedAt")]
+    public DateTime? UpdatedAt { get; init; }
+}
+
+/// <summary>
+/// Request body for modifying the user's delivery settings.
+/// </summary>
+public record DeliverySettingsRequest
+{
+    /// <summary>
+    /// Marketplace the settings apply to.
+    /// </summary>
+    [JsonPropertyName("marketplace")]
+    public DeliveryMarketplace? Marketplace { get; init; }
+
+    /// <summary>
+    /// Free delivery threshold for domestic shipments.
+    /// </summary>
+    [JsonPropertyName("freeDelivery")]
+    public DeliveryThreshold? FreeDelivery { get; init; }
+
+    /// <summary>
+    /// Free delivery threshold for abroad shipments.
+    /// </summary>
+    [JsonPropertyName("abroadFreeDelivery")]
+    public DeliveryThreshold? AbroadFreeDelivery { get; init; }
+
+    /// <summary>
+    /// Strategy used to join delivery costs (MIN, MAX, SUM).
+    /// </summary>
+    [JsonPropertyName("joinPolicy")]
+    public DeliveryJoinPolicy? JoinPolicy { get; init; }
+
+    /// <summary>
+    /// Custom cost configuration.
+    /// </summary>
+    [JsonPropertyName("customCost")]
+    public DeliveryCustomCost? CustomCost { get; init; }
 }
 
 public record DeliveryMarketplace

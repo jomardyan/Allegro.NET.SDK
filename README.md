@@ -34,7 +34,7 @@ A modern .NET client library for integrating with the Allegro marketplace API. T
 
 ### Comprehensive API Support
 
-This library implements 170+ endpoints across 35 specialized clients, providing access to nearly all Allegro API functionality:
+This library implements 230+ endpoints across 36 specialized clients, providing access to all documented Allegro API functionality:
 
 - **Listing Management** - Create, update, and manage product offers with full support for variants, translations, and attachments
 - **Order Processing** - Handle orders from receipt through fulfillment, including invoicing and returns
@@ -141,7 +141,7 @@ using AllegroApi;
 // Create sandbox client
 var sandboxClient = AllegroApiClient.CreateSandbox("your-sandbox-access-token");
 
-// Use exactly like production - all 35 clients available
+// Use exactly like production - all 36 clients available
 var categories = await sandboxClient.Categories.GetCategoriesAsync();
 var products = await sandboxClient.Products.SearchProductsByPhraseAsync("test");
 ```
@@ -631,7 +631,7 @@ public void ConfigureServices(IServiceCollection services)
 
 ## API Coverage
 
-AllegroApi implements 170+ of the 180 available Allegro REST API endpoints (95% coverage) through 35 specialized clients.
+AllegroApi implements all 266 documented Allegro REST API operations (100% coverage) through 36 specialized clients.
 
 ### Client Organization
 
@@ -654,7 +654,8 @@ AllegroApi implements 170+ of the 180 available Allegro REST API endpoints (95% 
 <summary><b>Pricing & Campaigns (14 methods)</b></summary>
 
 - **PricingClient** - Fee calculations
-- **AllegroPricesClient** - Allegro Prices consent, Alle Discount campaigns
+- **AllegroPricesClient** - Allegro Prices consent, account participation, Alle Discount campaigns, offer subsidy commands
+- **PriceAutomationClient** - Automatic pricing rules (create, read, update, delete, per-offer rules)
 - **BatchOperationsClient** - Price automation commands
 </details>
 
@@ -995,7 +996,7 @@ The client automatically handles rate limiting:
 
 The project includes comprehensive unit tests covering API clients, HTTP communication, configuration, and exception handling.
 
-**Test Coverage:** 143 tests with 100% pass rate across 22 test files, covering the core API clients.
+**Test Coverage:** 164 tests with 100% pass rate, covering the core API clients and the latest endpoint additions.
 
 ### Running Tests
 

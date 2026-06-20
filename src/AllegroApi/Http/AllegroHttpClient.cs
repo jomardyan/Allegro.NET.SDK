@@ -370,7 +370,7 @@ public class AllegroHttpClient : IDisposable
         }
     }
 
-    private async Task ThrowAppropriateException(HttpResponseMessage response, string content)
+    private Task ThrowAppropriateException(HttpResponseMessage response, string content)
     {
         ErrorsHolder? errors = null;
         AuthError? authError = null;
