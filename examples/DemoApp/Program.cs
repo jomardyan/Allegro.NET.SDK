@@ -6,6 +6,9 @@ using AllegroApi.Models.Products;
 using AllegroApi.Models.Offers;
 using AllegroApi.Models.Orders;
 using AllegroApi.Models.Common;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -18,50 +21,100 @@ namespace AllegroApi.DemoApp;
 /// Demo application showcasing AllegroApi SDK usage.
 /// This application demonstrates common operations: authentication, product search,
 /// offer management, order processing, and error handling.
+///
+/// Logging is powered by Serilog and configured via appsettings.json.
+/// Set "AllegroApi:EnableLogging" to true to see verbose HTTP request/response output.
+/// Use ASPNETCORE_ENVIRONMENT=Development (or DOTNET_ENVIRONMENT=Development) to
+/// automatically activate the appsettings.Development.json overrides which enable
+/// Debug-level logging.
 /// </summary>
 class Program
 {
     static async Task Main(string[] args)
     {
+        // ── 1. Build configuration (appsettings.json + environment overrides) ─────
+        var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+                       ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                       ?? "Production";
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .Build();
+
+        // ── 2. Bootstrap Serilog from configuration ───────────────────────────────
+        // To disable all logging: set "AllegroApi:EnableLogging": false  (or remove
+        // the Serilog section from appsettings.json).
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(configuration)
+            .CreateLogger();
+
+        // Bridge Serilog into Microsoft.Extensions.Logging so the SDK picks it up.
+        using var loggerFactory = LoggerFactory.Create(builder =>
+            builder.AddSerilog(Log.Logger, dispose: false));
+
+        var logger = loggerFactory.CreateLogger<Program>();
+
+        logger.LogInformation("AllegroApi SDK Demo starting (environment: {Environment})", environment);
+
         Console.WriteLine("╔════════════════════════════════════════════════════════════════╗");
         Console.WriteLine("║                  AllegroApi SDK Demo Application              ║");
         Console.WriteLine("║                  Complete Usage Examples                       ║");
         Console.WriteLine("╚════════════════════════════════════════════════════════════════╝\n");
 
-        // Check for API token
+        // ── 3. Read SDK settings from configuration ───────────────────────────────
         var apiToken = Environment.GetEnvironmentVariable("ALLEGRO_API_TOKEN");
         var useSandbox = Environment.GetEnvironmentVariable("USE_SANDBOX")?.ToLower() == "true";
+        var enableSdkLogging = configuration.GetValue<bool>("AllegroApi:EnableLogging");
 
         if (string.IsNullOrEmpty(apiToken))
         {
             PrintSetupInstructions();
+            await Log.CloseAndFlushAsync();
             return;
         }
 
         try
         {
-            // Initialize the SDK client
-            var client = useSandbox 
-                ? AllegroApiClient.CreateSandbox(apiToken)
-                : AllegroApiClient.CreateProduction(apiToken);
+            // ── 4. Build AllegroApiOptions with logging toggle ────────────────────
+            var options = new AllegroApiOptions
+            {
+                AccessToken = apiToken,
+                EnableLogging = enableSdkLogging
+            }.ForEnvironment(useSandbox ? AllegroEnvironment.Sandbox : AllegroEnvironment.Production);
+
+            // ── 5. Create client — pass the loggerFactory so Serilog is used ──────
+            using var client = new AllegroApiClient(options, loggerFactory);
+
+            logger.LogInformation("Connected to Allegro API ({Mode} mode, SDK logging: {LoggingEnabled})",
+                useSandbox ? "Sandbox" : "Production", enableSdkLogging);
 
             Console.WriteLine($"✅ Connected to Allegro API ({(useSandbox ? "Sandbox" : "Production")} mode)\n");
+            if (enableSdkLogging)
+                Console.WriteLine("📋 SDK request/response logging is ENABLED (see logs/ directory)\n");
 
-            // Run demo scenarios
+            // ── 6. Run demo scenarios ─────────────────────────────────────────────
             await RunAllDemosAsync(client);
 
             Console.WriteLine("\n╔════════════════════════════════════════════════════════════════╗");
             Console.WriteLine("║                    Demo Complete!                              ║");
             Console.WriteLine("╚════════════════════════════════════════════════════════════════╝");
+            logger.LogInformation("Demo finished successfully");
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Fatal error in demo application");
             Console.WriteLine($"\n❌ Fatal Error: {ex.Message}");
             Console.WriteLine($"   {ex.GetType().Name}");
             if (ex.InnerException != null)
-            {
                 Console.WriteLine($"   Inner: {ex.InnerException.Message}");
-            }
+        }
+        finally
+        {
+            // Ensure all buffered log events are flushed before the process exits.
+            await Log.CloseAndFlushAsync();
         }
     }
 
@@ -89,13 +142,13 @@ class Program
         try
         {
             var account = await client.Account.GetAccountInfoAsync();
-            
+
             Console.WriteLine($"Account ID: {account.Id}");
             Console.WriteLine($"Login: {account.Login}");
             Console.WriteLine($"Email: {account.Email}");
             Console.WriteLine($"Company Name: {account.CompanyName ?? "N/A"}");
             Console.WriteLine($"Status: {account.Status}");
-            
+
             Console.WriteLine("✅ Successfully retrieved account information");
         }
         catch (AllegroAuthenticationException)
@@ -119,11 +172,10 @@ class Program
 
         try
         {
-            // Get root categories
             var categories = await client.Categories.GetCategoriesAsync();
-            
+
             Console.WriteLine($"Found {categories.Categories?.Count ?? 0} root categories:");
-            
+
             if (categories.Categories != null)
             {
                 foreach (var category in categories.Categories.Take(5))
@@ -133,17 +185,14 @@ class Program
                 }
 
                 if (categories.Categories.Count > 5)
-                {
                     Console.WriteLine($"  ... and {categories.Categories.Count - 5} more");
-                }
             }
 
-            // Get specific category details
             if (categories.Categories?.Count > 0)
             {
                 var firstCategory = categories.Categories[0];
                 Console.WriteLine($"\nGetting details for: {firstCategory.Name}");
-                
+
                 var categoryDetails = await client.Categories.GetCategoryAsync(firstCategory.Id);
                 Console.WriteLine($"  Parent: {categoryDetails.Parent?.Id ?? "None (root)"}");
                 Console.WriteLine($"  Leaf Category: {categoryDetails.Leaf}");
@@ -171,9 +220,7 @@ class Program
             var searchPhrase = "laptop";
             Console.WriteLine($"Searching for: '{searchPhrase}'");
             Console.WriteLine("ℹ️  Searching products in Allegro catalog...\n");
-            
-            // Note: SearchProductsAsync requires specific parameters
-            // Simplified demo showing the API is available
+
             Console.WriteLine("Product search functionality available via:");
             Console.WriteLine("  • client.Products.SearchProductsAsync()");
             Console.WriteLine("  • client.Products.GetProductAsync(productId)");
@@ -203,7 +250,7 @@ class Program
             Console.WriteLine("  • Search by GTIN (barcode)");
             Console.WriteLine("  • Search by MPN (manufacturer part number)");
             Console.WriteLine("  • Find matching categories");
-            
+
             Console.WriteLine("\nExample: Get product by ID");
             Console.WriteLine("  var product = await client.Products.GetProductAsync(\"product-id\");");
 
@@ -232,7 +279,7 @@ class Program
             Console.WriteLine("  • Update fulfillment status");
             Console.WriteLine("  • Get order invoices");
             Console.WriteLine("  • Handle customer returns");
-            
+
             Console.WriteLine("\nExample: Search orders");
             Console.WriteLine("  var params = new OrderSearchParams { Limit = 10 };");
             Console.WriteLine("  var orders = await client.Orders.GetOrdersAsync(params);");
@@ -261,12 +308,12 @@ class Program
         try
         {
             var testImageUrl = "https://via.placeholder.com/800x600.png?text=AllegroApi+Demo";
-            
+
             Console.WriteLine($"Uploading test image from URL:");
             Console.WriteLine($"  {testImageUrl}");
-            
+
             var uploadResponse = await client.Images.UploadImageFromUrlAsync(testImageUrl);
-            
+
             Console.WriteLine($"\n✅ Image uploaded successfully!");
             Console.WriteLine($"   Location: {uploadResponse.Location}");
             Console.WriteLine($"   Expires: {uploadResponse.ExpiresAt:yyyy-MM-dd HH:mm:ss}");
@@ -291,7 +338,6 @@ class Program
     {
         PrintSectionHeader("Demo 7: Error Handling Examples");
 
-        // Example 1: Not Found (404)
         Console.WriteLine("Test 1: Handling 404 Not Found");
         try
         {
@@ -303,12 +349,10 @@ class Program
             Console.WriteLine($"     Message: {ex.Message}");
         }
 
-        // Example 2: Bad Request (400)
         Console.WriteLine("\nTest 2: Validation Error Handling");
         Console.WriteLine("  ℹ️  AllegroBadRequestException includes ValidationErrors list");
         Console.WriteLine("  ℹ️  Each error contains Path and Message properties");
 
-        // Example 3: Rate Limiting
         Console.WriteLine("\nTest 3: Rate Limit Awareness");
         Console.WriteLine("  ℹ️  SDK handles rate limits automatically with retry logic");
         Console.WriteLine("  ℹ️  AllegroRateLimitException includes RetryAfterSeconds property");
@@ -330,7 +374,7 @@ class Program
             Console.WriteLine("  • Update prices for multiple offers at once");
             Console.WriteLine("  • Change quantities in bulk");
             Console.WriteLine("  • Modify offers en masse");
-            
+
             Console.WriteLine("\nExample: Batch Price Change Structure");
             Console.WriteLine("  {");
             Console.WriteLine("    \"offers\": [");
@@ -390,7 +434,7 @@ class Program
         try
         {
             Console.WriteLine("Searching public listings for: 'gaming laptop'\n");
-            
+
             var listings = await client.Listing.SearchByPhraseAsync(
                 phrase: "gaming laptop",
                 limit: 5);
@@ -398,28 +442,22 @@ class Program
             if (listings.Items?.Promoted != null && listings.Items.Promoted.Count > 0)
             {
                 Console.WriteLine($"Found {listings.Items.Promoted.Count} promoted offers:");
-                
+
                 foreach (var offer in listings.Items.Promoted.Take(3))
                 {
                     Console.WriteLine($"\n  🌟 {offer.Name}");
                     Console.WriteLine($"     ID: {offer.Id}");
-                    
+
                     if (offer.SellingMode?.Price != null)
-                    {
                         Console.WriteLine($"     Price: {offer.SellingMode.Price.Amount} {offer.SellingMode.Price.Currency}");
-                    }
-                    
+
                     if (offer.Seller != null)
-                    {
                         Console.WriteLine($"     Seller: {offer.Seller.Login}");
-                    }
                 }
             }
 
             if (listings.Items?.Regular != null && listings.Items.Regular.Count > 0)
-            {
                 Console.WriteLine($"\n  Plus {listings.Items.Regular.Count} regular listings");
-            }
 
             Console.WriteLine("\n✅ Public listing search successful");
         }
@@ -448,33 +486,36 @@ class Program
         Console.WriteLine("⚠️  API Token Not Found!");
         Console.WriteLine("\nSetup Instructions:");
         Console.WriteLine("==================\n");
-        
+
         Console.WriteLine("1. Get your API credentials:");
         Console.WriteLine("   • Production: https://apps.developer.allegro.pl/");
         Console.WriteLine("   • Sandbox: https://apps.developer.allegro.pl.allegrosandbox.pl/\n");
-        
+
         Console.WriteLine("2. Set environment variables:\n");
-        
+
         Console.WriteLine("   Linux/macOS:");
         Console.WriteLine("   -----------");
         Console.WriteLine("   export ALLEGRO_API_TOKEN=\"your-access-token\"");
         Console.WriteLine("   export USE_SANDBOX=\"true\"  # Optional, defaults to production\n");
-        
+
         Console.WriteLine("   Windows PowerShell:");
         Console.WriteLine("   ------------------");
         Console.WriteLine("   $env:ALLEGRO_API_TOKEN=\"your-access-token\"");
         Console.WriteLine("   $env:USE_SANDBOX=\"true\"  # Optional\n");
-        
+
         Console.WriteLine("   Windows CMD:");
         Console.WriteLine("   -----------");
         Console.WriteLine("   set ALLEGRO_API_TOKEN=your-access-token");
         Console.WriteLine("   set USE_SANDBOX=true\n");
-        
-        Console.WriteLine("3. Run the demo:");
+
+        Console.WriteLine("3. Enable verbose SDK logging (optional):");
+        Console.WriteLine("   export DOTNET_ENVIRONMENT=Development\n");
+
+        Console.WriteLine("4. Run the demo:");
         Console.WriteLine("   dotnet run\n");
-        
+
         Console.WriteLine("For more information:");
-        Console.WriteLine("  • GitHub: https://github.com/jomardyan/OfferManager");
+        Console.WriteLine("  • GitHub: https://github.com/jomardyan/Allegro.NET.SDK");
         Console.WriteLine("  • Allegro API Docs: https://developer.allegro.pl/");
     }
 }

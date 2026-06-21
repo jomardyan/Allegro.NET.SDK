@@ -321,7 +321,7 @@ public class AllegroHttpClient : IDisposable
                     ? TimeSpan.FromSeconds(ex.RetryAfterSeconds.Value)
                     : TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
 
-                _logger?.LogWarning($"Rate limit exceeded. Retrying after {delay.TotalSeconds} seconds (attempt {attemptCount}/{maxAttempts})");
+                _logger?.LogWarning("[Allegro API] Rate limit exceeded. Retrying after {Delay}s (attempt {Attempt}/{Max})", delay.TotalSeconds, attemptCount, maxAttempts);
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (AllegroServerException)
@@ -330,7 +330,7 @@ public class AllegroHttpClient : IDisposable
                     throw;
 
                 var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
-                _logger?.LogWarning($"Server error occurred. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
+                _logger?.LogWarning("[Allegro API] Server error. Retrying after {DelayMs}ms (attempt {Attempt}/{Max})", delay.TotalMilliseconds, attemptCount, maxAttempts);
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -344,7 +344,7 @@ public class AllegroHttpClient : IDisposable
                     throw new AllegroNetworkException("Network error occurred while communicating with the Allegro API", ex);
 
                 var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
-                _logger?.LogWarning($"Network error occurred. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
+                _logger?.LogWarning("[Allegro API] Network error. Retrying after {DelayMs}ms (attempt {Attempt}/{Max})", delay.TotalMilliseconds, attemptCount, maxAttempts);
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException ex)
@@ -357,7 +357,7 @@ public class AllegroHttpClient : IDisposable
                         ex);
 
                 var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
-                _logger?.LogWarning($"Request timed out. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
+                _logger?.LogWarning("[Allegro API] Request timed out. Retrying after {DelayMs}ms (attempt {Attempt}/{Max})", delay.TotalMilliseconds, attemptCount, maxAttempts);
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not AllegroApiException)
@@ -501,11 +501,9 @@ public class AllegroHttpClient : IDisposable
         if (!_options.EnableLogging || _logger == null)
             return;
 
-        _logger.LogDebug($"[Allegro API] {method} {url}");
+        _logger.Log(_options.SdkLogLevel, "[Allegro API] {Method} {Url}", method, url);
         if (data != null)
-        {
-            _logger.LogDebug($"[Allegro API] Request body: {JsonSerializer.Serialize(data, _jsonOptions)}");
-        }
+            _logger.Log(_options.SdkLogLevel, "[Allegro API] Request body: {Body}", JsonSerializer.Serialize(data, _jsonOptions));
     }
 
     private void LogResponse(HttpStatusCode statusCode, string content)
@@ -513,11 +511,9 @@ public class AllegroHttpClient : IDisposable
         if (!_options.EnableLogging || _logger == null)
             return;
 
-        _logger.LogDebug($"[Allegro API] Response: {(int)statusCode} {statusCode}");
+        _logger.Log(_options.SdkLogLevel, "[Allegro API] Response: {StatusCode} {StatusName}", (int)statusCode, statusCode);
         if (!string.IsNullOrWhiteSpace(content))
-        {
-            _logger.LogDebug($"[Allegro API] Response body: {content}");
-        }
+            _logger.Log(_options.SdkLogLevel, "[Allegro API] Response body: {Body}", content);
     }
 
     public void Dispose()
