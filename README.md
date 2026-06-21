@@ -7,7 +7,7 @@
 [![Build and Test (Multi-OS)](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/build-test.yml/badge.svg)](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/build-test.yml)
 [![Publish to NuGet](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/publish-nuget.yml)
 
-A modern .NET client library for integrating with the Allegro marketplace API. This SDK provides strongly-typed access to over 170 API endpoints, covering everything from listing management to order fulfillment.
+A modern .NET client library for integrating with the Allegro marketplace API. This SDK provides strongly-typed access to over 260 API endpoints, covering everything from listing management to order fulfillment.
 
 > **Note:** This is an unofficial, community-maintained SDK. It is not officially endorsed or supported by Allegro.
 
@@ -34,7 +34,7 @@ A modern .NET client library for integrating with the Allegro marketplace API. T
 
 ### Comprehensive API Support
 
-This library implements 230+ endpoints across 36 specialized clients, providing access to all documented Allegro API functionality:
+This library implements 240+ endpoints across 36 specialized clients, providing access to all documented Allegro API functionality:
 
 - **Listing Management** - Create, update, and manage product offers with full support for variants, translations, and attachments
 - **Order Processing** - Handle orders from receipt through fulfillment, including invoicing and returns
@@ -52,7 +52,7 @@ This library implements 230+ endpoints across 36 specialized clients, providing 
 - **Strongly Typed** - Full IntelliSense support with comprehensive XML documentation
 - **Modern Async** - All API calls use async/await patterns with cancellation token support
 - **Resilient** - Automatic retries with exponential backoff and intelligent rate limit handling
-- **Well Tested** - 143 unit tests ensure reliability
+- **Well Tested** - 185 unit tests ensure reliability
 - **Multiple Environments** - Seamless switching between production and sandbox
 - **Error Handling** - Detailed exception types make debugging straightforward
 
@@ -184,7 +184,7 @@ var products = await sandboxClient.Products.SearchProductsByPhraseAsync("test");
 | **Real Money** | ✅ Yes | ❌ No (test mode) |
 | **Real Orders** | ✅ Yes | ❌ No (simulated) |
 | **Rate Limits** | Full limits | Same limits |
-| **All 35 Clients** | ✅ Available | ✅ Available |
+| **All 36 Clients** | ✅ Available | ✅ Available |
 
 ### Getting Sandbox Credentials
 
@@ -659,7 +659,7 @@ public void ConfigureServices(IServiceCollection services)
 
 ## API Coverage
 
-AllegroApi implements all 266 documented Allegro REST API operations (100% coverage) through 36 specialized clients.
+AllegroApi implements all 267 documented Allegro REST API operations (100% coverage) through 36 specialized clients.
 
 ### Client Organization
 
@@ -1071,7 +1071,7 @@ Contributions are welcome. Please follow these guidelines:
 
 ### Version 2.2.0 (June 2026)
 
-Closes the remaining gaps against the latest Allegro REST API spec (100% documented coverage — 266/266 operations) and hardens the SDK for production.
+Closes the remaining gaps against the latest Allegro REST API spec (100% documented coverage — 267/267 operations) and hardens the SDK for production.
 
 - **New endpoints:** automatic pricing rules (new `PriceAutomation` client), messaging attachments & new-message/thread-read, order events & parcel tracking, Allegro Prices account participation & subsidy commands, bundle/loyalty/tag management, offer rating & unfilled parameters, category product parameters, attachment upload/download and claim status changes.
 - **OAuth2 client credentials:** application token is acquired and refreshed automatically when only `ClientId`/`ClientSecret` are configured.

@@ -297,4 +297,70 @@ public class BatchOperationsClient
     }
 
     #endregion
+
+    #region Offer Bulk Modification (price & stock, beta)
+
+    /// <summary>
+    /// Creates a batch command modifying offer prices and/or stock (beta).
+    /// </summary>
+    /// <param name="command">Bulk change command with per-offer modifications.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Summary report for the command.</returns>
+    public System.Threading.Tasks.Task<OfferBulkModificationReport> CreateOfferBulkModificationCommandAsync(
+        OfferBulkChangeCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return _httpClient.PostAsync<OfferBulkChangeCommand, OfferBulkModificationReport>(
+            "/sale/offer-bulk-modification-commands",
+            command,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the summary status of an offer bulk modification command (beta).
+    /// </summary>
+    /// <param name="commandId">Command identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Summary report for the command.</returns>
+    public System.Threading.Tasks.Task<OfferBulkModificationReport> GetOfferBulkModificationCommandStatusAsync(
+        string commandId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(commandId);
+        return _httpClient.GetAsync<OfferBulkModificationReport>(
+            $"/sale/offer-bulk-modification-commands/{commandId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the detailed per-task report of an offer bulk modification command (beta).
+    /// </summary>
+    /// <param name="commandId">Command identifier.</param>
+    /// <param name="limit">Maximum number of tasks to return.</param>
+    /// <param name="offset">Offset for pagination.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Detailed per-task report.</returns>
+    public System.Threading.Tasks.Task<OfferBulkModificationTaskReport> GetOfferBulkModificationCommandTasksAsync(
+        string commandId,
+        int? limit = null,
+        int? offset = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(commandId);
+        var queryParams = new Dictionary<string, string>();
+        if (limit.HasValue)
+            queryParams["limit"] = limit.Value.ToString();
+        if (offset.HasValue)
+            queryParams["offset"] = offset.Value.ToString();
+
+        return _httpClient.GetAsync<OfferBulkModificationTaskReport>(
+            $"/sale/offer-bulk-modification-commands/{commandId}/tasks",
+            queryParams.Count > 0 ? queryParams : null,
+            cancellationToken);
+    }
+
+    #endregion
 }

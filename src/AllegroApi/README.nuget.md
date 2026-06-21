@@ -6,19 +6,19 @@
 [![CI](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/ci.yml)
 [![Build and Test (Multi-OS)](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/build-test.yml/badge.svg)](https://github.com/jomardyan/Allegro.NET.SDK/actions/workflows/build-test.yml)
 
-A modern .NET client library for the [Allegro REST API](https://developer.allegro.pl/). This SDK provides strongly-typed access to 230+ API endpoints across 36 specialized clients, covering 100% of the documented Allegro marketplace platform.
+A modern .NET client library for the [Allegro REST API](https://developer.allegro.pl/). This SDK provides strongly-typed access to 240+ API endpoints across 36 specialized clients, covering 100% of the documented Allegro marketplace platform.
 
 > **Note:** This is an unofficial, community-maintained SDK. It is not officially endorsed or supported by Allegro.
 
 ## Key Features
 
-**Comprehensive Coverage** - Access to 230+ API endpoints organized into 36 specialized clients covering offers, orders, fulfillment, shipping, payments, and more.
+**Comprehensive Coverage** - Access to 240+ API endpoints organized into 36 specialized clients covering offers, orders, fulfillment, shipping, payments, and more.
 
 **Developer Experience** - Strongly typed requests and responses with full IntelliSense support, making integration straightforward and reducing errors.
 
 **Modern Async** - All API calls use async/await patterns with cancellation token support for efficient resource usage.
 
-**Production Ready** - Automatic retry logic with exponential backoff, 11 specialized exception types, rate limit handling, and 143 unit tests.
+**Production Ready** - Automatic retry logic with exponential backoff, 11 specialized exception types, rate limit handling, and 185 unit tests.
 
 **Multi-Environment** - Switch between production and sandbox environments without code changes.
 
@@ -58,7 +58,7 @@ var orders = await client.Orders.GetOrdersAsync(new OrderSearchParams
 });
 ```
 
-## API Coverage (266/266 Documented Endpoints = 100%)
+## API Coverage (267/267 Documented Endpoints = 100%)
 
 | Category | Methods | Status |
 |----------|---------|--------|

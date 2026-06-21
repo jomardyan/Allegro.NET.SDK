@@ -432,4 +432,41 @@ public class FulfillmentClient
     }
 
     #endregion
+
+    #region Refund Dispositions
+
+    /// <summary>
+    /// Gets the refund dispositions report for Fulfillment by Allegro returns.
+    /// </summary>
+    /// <param name="createdAtGte">Return entries created at or after this date (ISO 8601).</param>
+    /// <param name="createdAtLte">Return entries created at or before this date (ISO 8601).</param>
+    /// <param name="limit">Maximum number of entries to return.</param>
+    /// <param name="offset">Offset for pagination.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Refund dispositions report.</returns>
+    public System.Threading.Tasks.Task<FulfillmentRefundDispositionsResponse> GetRefundDispositionsAsync(
+        string? createdAtGte = null,
+        string? createdAtLte = null,
+        int? limit = null,
+        int? offset = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(createdAtGte))
+            query.Add($"createdAt.gte={Uri.EscapeDataString(createdAtGte)}");
+        if (!string.IsNullOrEmpty(createdAtLte))
+            query.Add($"createdAt.lte={Uri.EscapeDataString(createdAtLte)}");
+        if (limit.HasValue)
+            query.Add($"limit={limit.Value}");
+        if (offset.HasValue)
+            query.Add($"offset={offset.Value}");
+
+        var endpoint = query.Count > 0
+            ? $"/fulfillment/returns/refund-dispositions?{string.Join("&", query)}"
+            : "/fulfillment/returns/refund-dispositions";
+
+        return _httpClient.GetAsync<FulfillmentRefundDispositionsResponse>(endpoint, null, cancellationToken);
+    }
+
+    #endregion
 }

@@ -272,4 +272,29 @@ public class OrderManagementClient
             null,
             cancellationToken);
     }
+
+    /// <summary>
+    /// Sets serial numbers for an order's line items.
+    /// </summary>
+    /// <param name="checkoutFormId">Checkout form (order) identifier.</param>
+    /// <param name="request">Line items with their serial numbers.</param>
+    /// <param name="revision">Optional checkout form revision for optimistic concurrency.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task SetLineItemsSerialNumbersAsync(
+        string checkoutFormId,
+        CheckoutFormLineItemsSetSerialNumbersRequest request,
+        string? revision = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(checkoutFormId);
+        ArgumentNullException.ThrowIfNull(request);
+        var endpoint = $"/order/checkout-forms/{checkoutFormId}/serial-numbers";
+        if (!string.IsNullOrEmpty(revision))
+            endpoint += $"?checkoutForm.revision={Uri.EscapeDataString(revision)}";
+        return _httpClient.PostAsync<CheckoutFormLineItemsSetSerialNumbersRequest>(
+            endpoint,
+            request,
+            null,
+            cancellationToken);
+    }
 }

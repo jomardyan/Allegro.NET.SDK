@@ -109,6 +109,108 @@ public class SaleExtensionsClient
 
     #endregion
 
+    #region Flexible Bundles
+
+    /// <summary>
+    /// Lists the seller's flexible bundles.
+    /// </summary>
+    /// <param name="offerId">Optional offer identifier to filter bundles containing that offer.</param>
+    /// <param name="limit">Maximum number of bundles to return.</param>
+    /// <param name="pageId">Identifier of the page to return (from a previous response's nextPage).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Paged list of flexible bundles.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundlesListingDTO> GetFlexibleBundlesAsync(
+        string? offerId = null,
+        int? limit = null,
+        string? pageId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(offerId))
+            query.Add($"offer.id={Uri.EscapeDataString(offerId)}");
+        if (limit.HasValue)
+            query.Add($"limit={limit.Value}");
+        if (!string.IsNullOrEmpty(pageId))
+            query.Add($"page.id={Uri.EscapeDataString(pageId)}");
+
+        var endpoint = query.Count > 0 ? $"/sale/flexible-bundles?{string.Join("&", query)}" : "/sale/flexible-bundles";
+        return _httpClient.GetAsync<FlexibleBundlesListingDTO>(endpoint, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates a new flexible bundle.
+    /// </summary>
+    /// <param name="bundle">Bundle definition.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created bundle.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundleGetDTO> CreateFlexibleBundleAsync(
+        FlexibleBundleCreateDTO bundle,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundle);
+        return _httpClient.PostAsync<FlexibleBundleCreateDTO, FlexibleBundleGetDTO>(
+            "/sale/flexible-bundles",
+            bundle,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a single flexible bundle by identifier.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The bundle details.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundleGetDTO> GetFlexibleBundleAsync(
+        string bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        return _httpClient.GetAsync<FlexibleBundleGetDTO>(
+            $"/sale/flexible-bundles/{bundleId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates an existing flexible bundle.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="bundle">Updated bundle definition.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated bundle.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundleGetDTO> UpdateFlexibleBundleAsync(
+        string bundleId,
+        FlexibleBundleUpdateDTO bundle,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        ArgumentNullException.ThrowIfNull(bundle);
+        return _httpClient.PutAsync<FlexibleBundleUpdateDTO, FlexibleBundleGetDTO>(
+            $"/sale/flexible-bundles/{bundleId}",
+            bundle,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Deletes a flexible bundle by identifier.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task DeleteFlexibleBundleAsync(
+        string bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        return _httpClient.DeleteAsync(
+            $"/sale/flexible-bundles/{bundleId}",
+            null,
+            cancellationToken);
+    }
+
+    #endregion
+
     #region Loyalty Promotions
 
     /// <summary>

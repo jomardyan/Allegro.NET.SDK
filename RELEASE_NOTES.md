@@ -4,9 +4,22 @@
 
 ## Version 2.2.0 (June 2026)
 
-This release closes the remaining gaps against the latest Allegro REST API specification, bringing documented endpoint coverage to 100% (266/266 operations), and fixes several incorrect endpoint paths.
+This release closes the remaining gaps against the latest Allegro REST API specification, bringing documented endpoint coverage to 100% (267/267 operations), and fixes several incorrect endpoint paths.
 
 ### What's New
+
+**Flexible Bundles (`SaleExtensions`)**
+- Full CRUD for flexible bundles (`/sale/flexible-bundles`): list, create, get, update, delete.
+
+**Batch offer price & stock modification (`BatchOperations`, beta)**
+- Create an offer bulk-modification command (`/sale/offer-bulk-modification-commands`) and poll its summary and per-task report.
+
+**Order serial numbers & Fulfillment returns**
+- Set line-item serial numbers on an order (`POST /order/checkout-forms/{id}/serial-numbers`).
+- Refund dispositions report for Fulfillment returns (`GET /fulfillment/returns/refund-dispositions`).
+
+**Shipment delivery proposals**
+- Get available delivery options for an order (`GET /shipment-management/delivery-proposals/{orderId}`).
 
 **Price Automation (`PriceAutomation` - new client, 6 methods)**
 Manage automatic pricing rules:
@@ -61,6 +74,8 @@ Manage automatic pricing rules:
 ### Compatibility
 
 This release is backward compatible for additive APIs. A few previously broken methods changed signatures as part of fixing their endpoints (`Messaging.GetMessageAsync`, `Shipping.GetDeliverySettingsAsync`/`UpdateDeliverySettingsAsync`, `Users.RequestRatingRemovalAsync`).
+
+**Deprecations (still present for backward compatibility):** the latest Allegro spec removed a few endpoints that this SDK still exposes — offer variants (`AdvancedOffers` variant methods, `/sale/offer-variants`), `SaleExtensions.CreateBundleAsync` (`POST /sale/bundles`, superseded by flexible bundles), and the legacy hyphenated Allegro Prices consent/eligibility methods (`/sale/allegro-prices-*`, superseded by `/sale/allegro-prices/...`). These remain callable but may stop working server-side; prefer the replacements.
 
 ---
 

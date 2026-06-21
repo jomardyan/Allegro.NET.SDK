@@ -236,4 +236,21 @@ public class ShipmentManagementClient
             null,
             cancellationToken);
     }
+
+    /// <summary>
+    /// Gets the available delivery options for an order, with a suggested shipment input.
+    /// </summary>
+    /// <param name="orderId">Order (checkout form) identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Delivery proposals for the order.</returns>
+    public System.Threading.Tasks.Task<DeliveryProposalDto> GetDeliveryProposalsAsync(
+        string orderId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(orderId);
+        return _httpClient.GetAsync<DeliveryProposalDto>(
+            $"/shipment-management/delivery-proposals/{orderId}",
+            null,
+            cancellationToken);
+    }
 }
