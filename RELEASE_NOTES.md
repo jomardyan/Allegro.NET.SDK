@@ -75,7 +75,7 @@ Manage automatic pricing rules:
 
 This release is backward compatible for additive APIs. A few previously broken methods changed signatures as part of fixing their endpoints (`Messaging.GetMessageAsync`, `Shipping.GetDeliverySettingsAsync`/`UpdateDeliverySettingsAsync`, `Users.RequestRatingRemovalAsync`).
 
-**Deprecations (still present for backward compatibility):** the latest Allegro spec removed a few endpoints that this SDK still exposes — offer variants (`AdvancedOffers` variant methods, `/sale/offer-variants`), `SaleExtensions.CreateBundleAsync` (`POST /sale/bundles`, superseded by flexible bundles), and the legacy hyphenated Allegro Prices consent/eligibility methods (`/sale/allegro-prices-*`, superseded by `/sale/allegro-prices/...`). These remain callable but may stop working server-side; prefer the replacements.
+**Removed endpoints (now compile-time errors):** the latest Allegro spec removed several endpoints that earlier versions of this SDK exposed. They are retained as members marked `[Obsolete(error: true)]`, so calling them is a **compilation error** that points to the replacement: offer variants (`AdvancedOffers.GetOfferVariantsAsync`/`CreateOfferVariantSetAsync`, `/sale/offer-variants`), `SaleExtensions.CreateBundleAsync` (`POST /sale/bundles` → use `CreateFlexibleBundleAsync`), and the legacy hyphenated Allegro Prices consent/eligibility methods (`/sale/allegro-prices-*` → use `GetAccountParticipationAsync`/`UpdateAccountParticipationAsync` and the offers-queries/submit/exclude commands).
 
 ---
 

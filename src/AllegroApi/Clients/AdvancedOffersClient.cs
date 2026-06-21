@@ -27,6 +27,7 @@ public class AdvancedOffersClient
     /// <param name="offerId">The offer identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Offer variant set.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API; offer variants are no longer managed via /sale/offer-variants.", true)]
     public System.Threading.Tasks.Task<OfferVariantSet> GetOfferVariantsAsync(
         string offerId,
         CancellationToken cancellationToken = default)
@@ -44,6 +45,7 @@ public class AdvancedOffersClient
     /// <param name="variantSet">Variant set details.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Created variant set.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API; offer variants are no longer managed via /sale/offer-variants.", true)]
     public System.Threading.Tasks.Task<OfferVariantSet> CreateOfferVariantSetAsync(
         OfferVariantSet variantSet,
         CancellationToken cancellationToken = default)

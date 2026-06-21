@@ -28,6 +28,7 @@ public class AllegroPricesClient
     /// <param name="offerId">The offer identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Consent status for the offer on each marketplace.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API. Use QueryOffersAsync / SubmitOffersToAllegroPricesAsync / ExcludeOffersAsync instead.", true)]
     public System.Threading.Tasks.Task<AllegroPricesOfferConsentResponse> GetOfferConsentAsync(
         string offerId,
         CancellationToken cancellationToken = default)
@@ -46,6 +47,7 @@ public class AllegroPricesClient
     /// <param name="request">Consent update request with status per marketplace.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated consent status.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API. Use QueryOffersAsync / SubmitOffersToAllegroPricesAsync / ExcludeOffersAsync instead.", true)]
     public System.Threading.Tasks.Task<AllegroPricesOfferConsentResponse> UpdateOfferConsentAsync(
         string offerId,
         AllegroPricesOfferConsentRequest request,
@@ -65,6 +67,7 @@ public class AllegroPricesClient
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Eligibility status with reason if not eligible.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API. Use GetAccountParticipationAsync instead.", true)]
     public System.Threading.Tasks.Task<AllegroPricesAccountEligibility> GetAccountEligibilityAsync(
         CancellationToken cancellationToken = default)
     {
@@ -79,6 +82,7 @@ public class AllegroPricesClient
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Account-level consent status per marketplace.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API. Use GetAccountParticipationAsync instead.", true)]
     public System.Threading.Tasks.Task<AllegroPricesAccountConsent> GetAccountConsentAsync(
         CancellationToken cancellationToken = default)
     {
@@ -94,6 +98,7 @@ public class AllegroPricesClient
     /// <param name="request">Consent update request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Updated account consent status.</returns>
+    [Obsolete("This endpoint was removed from the Allegro API. Use UpdateAccountParticipationAsync instead.", true)]
     public System.Threading.Tasks.Task<AllegroPricesAccountConsent> UpdateAccountConsentAsync(
         AllegroPricesAccountConsentRequest request,
         CancellationToken cancellationToken = default)

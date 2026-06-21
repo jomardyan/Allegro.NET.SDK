@@ -41,6 +41,7 @@ public class SaleExtensionsClient
     /// <param name="bundle">Bundle details.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Created bundle.</returns>
+    [Obsolete("Creating bundles via POST /sale/bundles was removed from the Allegro API. Use CreateFlexibleBundleAsync instead.", true)]
     public System.Threading.Tasks.Task<Bundle> CreateBundleAsync(
         Bundle bundle,
         CancellationToken cancellationToken = default)
