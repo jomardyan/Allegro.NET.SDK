@@ -70,9 +70,19 @@ public class AllegroApiOptions
     public string AcceptLanguage { get; set; } = "en-US";
 
     /// <summary>
-    /// Enable request/response logging (default: false)
+    /// Enable request/response logging (default: false).
+    /// When true, HTTP requests, responses and retry attempts are written via
+    /// the <see cref="Microsoft.Extensions.Logging.ILogger"/> passed to the client.
+    /// Flip this at runtime or via appsettings.json ("AllegroApi:EnableLogging": true).
     /// </summary>
     public bool EnableLogging { get; set; } = false;
+
+    /// <summary>
+    /// Minimum log level for SDK messages when <see cref="EnableLogging"/> is true.
+    /// Defaults to <see cref="Microsoft.Extensions.Logging.LogLevel.Debug"/>.
+    /// Change to <see cref="Microsoft.Extensions.Logging.LogLevel.Information"/> to reduce noise.
+    /// </summary>
+    public Microsoft.Extensions.Logging.LogLevel SdkLogLevel { get; set; } = Microsoft.Extensions.Logging.LogLevel.Debug;
 
     /// <summary>
     /// Validate configuration
