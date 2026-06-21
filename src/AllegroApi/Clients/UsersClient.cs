@@ -158,20 +158,21 @@ public class UsersClient
     }
 
     /// <summary>
-    /// Requests removal of a rating.
+    /// Requests removal of a buyer's rating.
     /// </summary>
     /// <param name="ratingId">The rating identifier.</param>
-    /// <param name="request">Removal request details.</param>
+    /// <param name="request">Removal request details, including the explanation message.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public System.Threading.Tasks.Task RequestRatingRemovalAsync(
+    /// <returns>Removal information including the deadline for submitting a removal request.</returns>
+    public System.Threading.Tasks.Task<UserRatingRemoval> RequestRatingRemovalAsync(
         string ratingId,
         RatingRemovalRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(ratingId);
         ArgumentNullException.ThrowIfNull(request);
-        return _httpClient.PostAsync<RatingRemovalRequest>(
-            $"/sale/user-ratings/{ratingId}/removal-request",
+        return _httpClient.PutAsync<RatingRemovalRequest, UserRatingRemoval>(
+            $"/sale/user-ratings/{ratingId}/removal",
             request,
             null,
             cancellationToken);

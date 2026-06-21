@@ -253,3 +253,27 @@ public record AfterSalesAttachmentResponse
     [JsonPropertyName("uploadUrl")]
     public string? UploadUrl { get; init; }
 }
+
+/// <summary>
+/// Uploaded after-sales service conditions attachment.
+/// </summary>
+public record AfterSalesServicesAttachment
+{
+    /// <summary>
+    /// Attachment identifier.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+
+    /// <summary>
+    /// Attachment file name.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string? Name { get; init; }
+
+    /// <summary>
+    /// Attachment URL.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string? Url { get; init; }
+}

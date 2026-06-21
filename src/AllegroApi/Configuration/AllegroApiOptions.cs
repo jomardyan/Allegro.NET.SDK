@@ -53,9 +53,15 @@ public class AllegroApiOptions
     public bool EnableAutoTokenRefresh { get; set; } = true;
 
     /// <summary>
-    /// User-Agent header value (default: AllegroApi-CSharp/1.0)
+    /// The SDK version, derived from the assembly version so the User-Agent never drifts.
     /// </summary>
-    public string UserAgent { get; set; } = "AllegroApi-CSharp/1.0";
+    private static readonly string SdkVersion =
+        typeof(AllegroApiOptions).Assembly.GetName().Version?.ToString(3) ?? "2.3.0";
+
+    /// <summary>
+    /// User-Agent header value (default: AllegroApi-CSharp/{assembly version})
+    /// </summary>
+    public string UserAgent { get; set; } = $"AllegroApi-CSharp/{SdkVersion}";
 
     /// <summary>
     /// Accept-Language header value (default: en-US)

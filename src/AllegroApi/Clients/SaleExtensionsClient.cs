@@ -41,6 +41,7 @@ public class SaleExtensionsClient
     /// <param name="bundle">Bundle details.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Created bundle.</returns>
+    [Obsolete("Creating bundles via POST /sale/bundles was removed from the Allegro API. Use CreateFlexibleBundleAsync instead.", true)]
     public System.Threading.Tasks.Task<Bundle> CreateBundleAsync(
         Bundle bundle,
         CancellationToken cancellationToken = default)
@@ -49,6 +50,162 @@ public class SaleExtensionsClient
         return _httpClient.PostAsync<Bundle, Bundle>(
             "/sale/bundles",
             bundle,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a single offer bundle by identifier.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Bundle details.</returns>
+    public System.Threading.Tasks.Task<OfferBundleDTO> GetBundleAsync(
+        string bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        return _httpClient.GetAsync<OfferBundleDTO>(
+            $"/sale/bundles/{bundleId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Deletes an offer bundle by identifier.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task DeleteBundleAsync(
+        string bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        return _httpClient.DeleteAsync(
+            $"/sale/bundles/{bundleId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates the discount associated with a bundle.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="request">Discount update details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Updated bundle.</returns>
+    public System.Threading.Tasks.Task<OfferBundleDTO> UpdateBundleDiscountAsync(
+        string bundleId,
+        UpdateOfferBundleDiscountDTO request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PutAsync<UpdateOfferBundleDiscountDTO, OfferBundleDTO>(
+            $"/sale/bundles/{bundleId}/discount",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    #endregion
+
+    #region Flexible Bundles
+
+    /// <summary>
+    /// Lists the seller's flexible bundles.
+    /// </summary>
+    /// <param name="offerId">Optional offer identifier to filter bundles containing that offer.</param>
+    /// <param name="limit">Maximum number of bundles to return.</param>
+    /// <param name="pageId">Identifier of the page to return (from a previous response's nextPage).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Paged list of flexible bundles.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundlesListingDTO> GetFlexibleBundlesAsync(
+        string? offerId = null,
+        int? limit = null,
+        string? pageId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(offerId))
+            query.Add($"offer.id={Uri.EscapeDataString(offerId)}");
+        if (limit.HasValue)
+            query.Add($"limit={limit.Value}");
+        if (!string.IsNullOrEmpty(pageId))
+            query.Add($"page.id={Uri.EscapeDataString(pageId)}");
+
+        var endpoint = query.Count > 0 ? $"/sale/flexible-bundles?{string.Join("&", query)}" : "/sale/flexible-bundles";
+        return _httpClient.GetAsync<FlexibleBundlesListingDTO>(endpoint, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates a new flexible bundle.
+    /// </summary>
+    /// <param name="bundle">Bundle definition.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created bundle.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundleGetDTO> CreateFlexibleBundleAsync(
+        FlexibleBundleCreateDTO bundle,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundle);
+        return _httpClient.PostAsync<FlexibleBundleCreateDTO, FlexibleBundleGetDTO>(
+            "/sale/flexible-bundles",
+            bundle,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a single flexible bundle by identifier.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The bundle details.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundleGetDTO> GetFlexibleBundleAsync(
+        string bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        return _httpClient.GetAsync<FlexibleBundleGetDTO>(
+            $"/sale/flexible-bundles/{bundleId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates an existing flexible bundle.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="bundle">Updated bundle definition.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated bundle.</returns>
+    public System.Threading.Tasks.Task<FlexibleBundleGetDTO> UpdateFlexibleBundleAsync(
+        string bundleId,
+        FlexibleBundleUpdateDTO bundle,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        ArgumentNullException.ThrowIfNull(bundle);
+        return _httpClient.PutAsync<FlexibleBundleUpdateDTO, FlexibleBundleGetDTO>(
+            $"/sale/flexible-bundles/{bundleId}",
+            bundle,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Deletes a flexible bundle by identifier.
+    /// </summary>
+    /// <param name="bundleId">Bundle identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task DeleteFlexibleBundleAsync(
+        string bundleId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bundleId);
+        return _httpClient.DeleteAsync(
+            $"/sale/flexible-bundles/{bundleId}",
             null,
             cancellationToken);
     }
@@ -67,6 +224,60 @@ public class SaleExtensionsClient
     {
         return _httpClient.GetAsync<LoyaltyPromotionsList>(
             "/sale/loyalty/promotions",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a single loyalty promotion by identifier.
+    /// </summary>
+    /// <param name="promotionId">Promotion identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Promotion details.</returns>
+    public System.Threading.Tasks.Task<SellerRebateDto> GetLoyaltyPromotionAsync(
+        string promotionId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(promotionId);
+        return _httpClient.GetAsync<SellerRebateDto>(
+            $"/sale/loyalty/promotions/{promotionId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Modifies an existing loyalty promotion.
+    /// </summary>
+    /// <param name="promotionId">Promotion identifier.</param>
+    /// <param name="request">Updated promotion definition.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Updated promotion.</returns>
+    public System.Threading.Tasks.Task<SellerRebateDto> UpdateLoyaltyPromotionAsync(
+        string promotionId,
+        SellerCreateRebateRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(promotionId);
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PutAsync<SellerCreateRebateRequestDto, SellerRebateDto>(
+            $"/sale/loyalty/promotions/{promotionId}",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Deactivates (deletes) a loyalty promotion by identifier.
+    /// </summary>
+    /// <param name="promotionId">Promotion identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task DeactivateLoyaltyPromotionAsync(
+        string promotionId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(promotionId);
+        return _httpClient.DeleteAsync(
+            $"/sale/loyalty/promotions/{promotionId}",
             null,
             cancellationToken);
     }
@@ -148,6 +359,42 @@ public class SaleExtensionsClient
         return _httpClient.PostAsync<AssignTagRequest>(
             $"/sale/offers/{offerId}/tags",
             request,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Modifies an existing offer tag.
+    /// </summary>
+    /// <param name="tagId">Tag identifier.</param>
+    /// <param name="request">Updated tag details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task UpdateOfferTagAsync(
+        string tagId,
+        TagRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(tagId);
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PutAsync<TagRequest>(
+            $"/sale/offer-tags/{tagId}",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Deletes an offer tag.
+    /// </summary>
+    /// <param name="tagId">Tag identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task DeleteOfferTagAsync(
+        string tagId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(tagId);
+        return _httpClient.DeleteAsync(
+            $"/sale/offer-tags/{tagId}",
             null,
             cancellationToken);
     }
@@ -344,6 +591,33 @@ public class SaleExtensionsClient
             cancellationToken);
     }
 
+    /// <summary>
+    /// Gets the detailed result (per-offer tasks) of a batch promo options modification command.
+    /// </summary>
+    /// <param name="commandId">Command identifier.</param>
+    /// <param name="limit">Maximum number of tasks to return.</param>
+    /// <param name="offset">Number of tasks to skip.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Detailed report with per-offer modification tasks.</returns>
+    public System.Threading.Tasks.Task<PromoModificationReport> GetPromoOptionsCommandTasksAsync(
+        string commandId,
+        int? limit = null,
+        int? offset = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(commandId);
+        var queryParams = new Dictionary<string, string>();
+        if (limit.HasValue)
+            queryParams["limit"] = limit.Value.ToString();
+        if (offset.HasValue)
+            queryParams["offset"] = offset.Value.ToString();
+
+        return _httpClient.GetAsync<PromoModificationReport>(
+            $"/sale/offers/promo-options-commands/{commandId}/tasks",
+            queryParams.Count > 0 ? queryParams : null,
+            cancellationToken);
+    }
+
     #endregion
 
     #region Additional Services
@@ -393,6 +667,44 @@ public class SaleExtensionsClient
 
         return _httpClient.PostAsync<AdditionalServicesGroupRequest, AdditionalServicesGroupResponse>(
             "/sale/offer-additional-services/groups",
+            request,
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the details of a single additional services group.
+    /// </summary>
+    /// <param name="groupId">The additional services group identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The additional services group.</returns>
+    public System.Threading.Tasks.Task<AdditionalServicesGroupResponse> GetAdditionalServicesGroupAsync(
+        string groupId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(groupId);
+        return _httpClient.GetAsync<AdditionalServicesGroupResponse>(
+            $"/sale/offer-additional-services/groups/{groupId}",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Modifies an existing additional services group.
+    /// </summary>
+    /// <param name="groupId">The additional services group identifier.</param>
+    /// <param name="request">The updated additional services group details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The modified additional services group.</returns>
+    public System.Threading.Tasks.Task<AdditionalServicesGroupResponse> ModifyAdditionalServicesGroupAsync(
+        string groupId,
+        AdditionalServicesGroupRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(groupId);
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PutAsync<AdditionalServicesGroupRequest, AdditionalServicesGroupResponse>(
+            $"/sale/offer-additional-services/groups/{groupId}",
             request,
             null,
             cancellationToken);

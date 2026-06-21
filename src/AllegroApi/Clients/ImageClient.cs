@@ -64,16 +64,14 @@ public class ImageClient
     {
         if (imageData == null || imageData.Length == 0)
             throw new ArgumentException("Image data cannot be null or empty.", nameof(imageData));
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("Content type cannot be null or empty.", nameof(contentType));
 
-        // For binary upload, we need to use raw HTTP as AllegroHttpClient expects JSON
-        // This is a special case for image upload endpoint
-        var request = new ImageUploadByUrlRequest { Url = Convert.ToBase64String(imageData) };
-        
-        return await _httpClient.PostAsync<ImageUploadByUrlRequest, ImageUploadResponse>(
-            "/sale/images",
-            request,
-            null,
-            cancellationToken);
+        // Binary image upload uses a dedicated host (upload.allegro.pl) and expects the raw
+        // image bytes with the appropriate image/* content type, not a JSON payload.
+        var url = $"{_uploadBaseUrl.TrimEnd('/')}/sale/images";
+        var response = await _httpClient.PostRawBytesAsync(url, imageData, contentType, cancellationToken).ConfigureAwait(false);
+        return await _httpClient.ReadJsonAsync<ImageUploadResponse>(response).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -92,7 +90,7 @@ public class ImageClient
             throw new ArgumentNullException(nameof(stream));
 
         using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream, cancellationToken);
-        return await UploadImageAsync(memoryStream.ToArray(), contentType, cancellationToken);
+        await stream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
+        return await UploadImageAsync(memoryStream.ToArray(), contentType, cancellationToken).ConfigureAwait(false);
     }
 }

@@ -282,4 +282,58 @@ public class OfferManagementClient
     }
 
     #endregion
+
+    #region Rating & Parameters
+
+    /// <summary>
+    /// Gets the aggregated rating for an offer.
+    /// </summary>
+    /// <param name="offerId">Offer identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Offer rating information.</returns>
+    public Task<OfferRating> GetOfferRatingAsync(
+        string offerId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(offerId);
+        return _httpClient.GetAsync<OfferRating>(
+            $"/sale/offers/{offerId}/rating",
+            null,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets offers that have missing (unfilled) parameters.
+    /// </summary>
+    /// <param name="offerIds">Optional offer identifiers to filter by.</param>
+    /// <param name="parameterType">Optional parameter type filter.</param>
+    /// <param name="offset">Number of elements to skip.</param>
+    /// <param name="limit">Maximum number of elements to return.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Offers with their unfilled parameters.</returns>
+    public Task<UnfilledParametersResponse> GetOffersUnfilledParametersAsync(
+        IEnumerable<string>? offerIds = null,
+        string? parameterType = null,
+        int? offset = null,
+        int? limit = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (offerIds != null)
+            query.AddRange(offerIds.Select(id => $"offer.id={Uri.EscapeDataString(id)}"));
+        if (!string.IsNullOrEmpty(parameterType))
+            query.Add($"parameterType={Uri.EscapeDataString(parameterType)}");
+        if (offset.HasValue)
+            query.Add($"offset={offset.Value}");
+        if (limit.HasValue)
+            query.Add($"limit={limit.Value}");
+
+        var endpoint = query.Count > 0
+            ? $"/sale/offers/unfilled-parameters?{string.Join("&", query)}"
+            : "/sale/offers/unfilled-parameters";
+
+        return _httpClient.GetAsync<UnfilledParametersResponse>(endpoint, null, cancellationToken);
+    }
+
+    #endregion
 }

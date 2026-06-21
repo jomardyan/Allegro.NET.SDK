@@ -18,12 +18,24 @@ public class AllegroHttpClient : IDisposable
     private readonly AllegroApiOptions _options;
     private readonly ILogger<AllegroHttpClient>? _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly bool _disposeHttpClient;
 
-    public AllegroHttpClient(HttpClient httpClient, AllegroApiOptions options, ILogger<AllegroHttpClient>? logger = null)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AllegroHttpClient"/> class.
+    /// </summary>
+    /// <param name="httpClient">The underlying HttpClient.</param>
+    /// <param name="options">API options.</param>
+    /// <param name="logger">Optional logger.</param>
+    /// <param name="disposeHttpClient">
+    /// Whether this instance owns the <paramref name="httpClient"/> and should dispose it.
+    /// Set to <c>false</c> when the HttpClient is managed externally (e.g. by IHttpClientFactory).
+    /// </param>
+    public AllegroHttpClient(HttpClient httpClient, AllegroApiOptions options, ILogger<AllegroHttpClient>? logger = null, bool disposeHttpClient = true)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger;
+        _disposeHttpClient = disposeHttpClient;
 
         _options.Validate();
 
@@ -64,9 +76,9 @@ public class AllegroHttpClient : IDisposable
         return await ExecuteWithRetryAsync(async () =>
         {
             LogRequest("GET", url);
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            return await HandleResponseAsync<T>(response);
-        }, cancellationToken);
+            var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            return await HandleResponseAsync<T>(response).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -78,15 +90,15 @@ public class AllegroHttpClient : IDisposable
         return await ExecuteWithRetryAsync(async () =>
         {
             LogRequest("GET", url);
-            var response = await _httpClient.GetAsync(url, cancellationToken);
+            var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             // Check for errors but don't deserialize - return raw response for binary content
             if (!response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                await ThrowAppropriateException(response, content);
+                var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                await ThrowAppropriateException(response, content).ConfigureAwait(false);
             }
             return response;
-        }, cancellationToken);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -104,9 +116,9 @@ public class AllegroHttpClient : IDisposable
             LogRequest("POST", url, data);
             var json = JsonSerializer.Serialize(data, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/vnd.allegro.public.v1+json");
-            var response = await _httpClient.PostAsync(url, content, cancellationToken);
-            return await HandleResponseAsync<TResponse>(response);
-        }, cancellationToken);
+            var response = await _httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+            return await HandleResponseAsync<TResponse>(response).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -122,11 +134,11 @@ public class AllegroHttpClient : IDisposable
         LogRequest("POST", url, data);
         var json = JsonSerializer.Serialize(data, _jsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/vnd.allegro.public.v1+json");
-        var response = await _httpClient.PostAsync(url, content, cancellationToken);
+        var response = await _httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            var contentStr = await response.Content.ReadAsStringAsync();
-            await ThrowAppropriateException(response, contentStr);
+            var contentStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            await ThrowAppropriateException(response, contentStr).ConfigureAwait(false);
         }
         return response;
     }
@@ -146,10 +158,10 @@ public class AllegroHttpClient : IDisposable
             LogRequest("POST", url, data);
             var json = JsonSerializer.Serialize(data, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/vnd.allegro.public.v1+json");
-            var response = await _httpClient.PostAsync(url, content, cancellationToken);
-            await HandleResponseAsync(response);
+            var response = await _httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+            await HandleResponseAsync(response).ConfigureAwait(false);
             return true;
-        }, cancellationToken);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -167,9 +179,9 @@ public class AllegroHttpClient : IDisposable
             LogRequest("PUT", url, data);
             var json = JsonSerializer.Serialize(data, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/vnd.allegro.public.v1+json");
-            var response = await _httpClient.PutAsync(url, content, cancellationToken);
-            return await HandleResponseAsync<TResponse>(response);
-        }, cancellationToken);
+            var response = await _httpClient.PutAsync(url, content, cancellationToken).ConfigureAwait(false);
+            return await HandleResponseAsync<TResponse>(response).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -187,10 +199,10 @@ public class AllegroHttpClient : IDisposable
             LogRequest("PUT", url, data);
             var json = JsonSerializer.Serialize(data, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/vnd.allegro.public.v1+json");
-            var response = await _httpClient.PutAsync(url, content, cancellationToken);
-            await HandleResponseAsync(response);
+            var response = await _httpClient.PutAsync(url, content, cancellationToken).ConfigureAwait(false);
+            await HandleResponseAsync(response).ConfigureAwait(false);
             return true;
-        }, cancellationToken);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -207,13 +219,38 @@ public class AllegroHttpClient : IDisposable
         LogRequest("PUT", url);
         using var content = new ByteArrayContent(data);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
-        var response = await _httpClient.PutAsync(url, content, cancellationToken);
+        var response = await _httpClient.PutAsync(url, content, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            var contentStr = await response.Content.ReadAsStringAsync();
-            await ThrowAppropriateException(response, contentStr);
+            var contentStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            await ThrowAppropriateException(response, contentStr).ConfigureAwait(false);
         }
         return response;
+    }
+
+    /// <summary>
+    /// Perform POST request with binary content (byte[]) and return the raw HttpResponseMessage.
+    /// Supports absolute URLs (e.g. the image upload host) as well as relative endpoints.
+    /// </summary>
+    public async Task<HttpResponseMessage> PostRawBytesAsync(
+        string url,
+        byte[] data,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            LogRequest("POST", url);
+            using var content = new ByteArrayContent(data);
+            content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            var response = await _httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var contentStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                await ThrowAppropriateException(response, contentStr).ConfigureAwait(false);
+            }
+            return response;
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -232,9 +269,9 @@ public class AllegroHttpClient : IDisposable
             var json = JsonSerializer.Serialize(data, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/vnd.allegro.public.v1+json");
             var request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            return await HandleResponseAsync<TResponse>(response);
-        }, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            return await HandleResponseAsync<TResponse>(response).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -246,10 +283,10 @@ public class AllegroHttpClient : IDisposable
         await ExecuteWithRetryAsync(async () =>
         {
             LogRequest("DELETE", url);
-            var response = await _httpClient.DeleteAsync(url, cancellationToken);
-            await HandleResponseAsync(response);
+            var response = await _httpClient.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+            await HandleResponseAsync(response).ConfigureAwait(false);
             return true;
-        }, cancellationToken);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private string BuildUrl(string endpoint, Dictionary<string, string>? queryParams)
@@ -268,57 +305,71 @@ public class AllegroHttpClient : IDisposable
         var attemptCount = 0;
         var maxAttempts = _options.MaxRetryAttempts + 1;
 
-        while (attemptCount < maxAttempts)
+        while (true)
         {
+            attemptCount++;
             try
             {
-                return await action();
+                return await action().ConfigureAwait(false);
             }
             catch (AllegroRateLimitException ex)
             {
-                attemptCount++;
                 if (attemptCount >= maxAttempts)
                     throw;
 
-                var delay = ex.RetryAfterSeconds.HasValue 
+                var delay = ex.RetryAfterSeconds.HasValue
                     ? TimeSpan.FromSeconds(ex.RetryAfterSeconds.Value)
                     : TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
 
                 _logger?.LogWarning($"Rate limit exceeded. Retrying after {delay.TotalSeconds} seconds (attempt {attemptCount}/{maxAttempts})");
-                await Task.Delay(delay, cancellationToken);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
-            catch (AllegroServerException) when (attemptCount < maxAttempts)
+            catch (AllegroServerException)
             {
-                attemptCount++;
                 if (attemptCount >= maxAttempts)
                     throw;
 
                 var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
                 _logger?.LogWarning($"Server error occurred. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
-                await Task.Delay(delay, cancellationToken);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
-            catch (AllegroNetworkException) when (attemptCount < maxAttempts)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                attemptCount++;
+                // Genuine cancellation requested by the caller - propagate as-is.
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
                 if (attemptCount >= maxAttempts)
-                    throw;
+                    throw new AllegroNetworkException("Network error occurred while communicating with the Allegro API", ex);
 
                 var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
                 _logger?.LogWarning($"Network error occurred. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
-                await Task.Delay(delay, cancellationToken);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Not caller-requested (handled above) - treat as a request timeout.
+                if (attemptCount >= maxAttempts)
+                    throw new AllegroTimeoutException(
+                        $"Request to the Allegro API timed out after {_options.TimeoutSeconds} seconds",
+                        TimeSpan.FromSeconds(_options.TimeoutSeconds),
+                        ex);
+
+                var delay = TimeSpan.FromMilliseconds(_options.RetryDelayMilliseconds * attemptCount);
+                _logger?.LogWarning($"Request timed out. Retrying after {delay.TotalMilliseconds}ms (attempt {attemptCount}/{maxAttempts})");
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not AllegroApiException)
             {
                 throw new AllegroApiException("Unexpected error occurred", ex);
             }
         }
-
-        throw new AllegroApiException("Maximum retry attempts exceeded");
     }
 
     private async Task<T> HandleResponseAsync<T>(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         LogResponse(response.StatusCode, content);
 
         if (response.IsSuccessStatusCode)
@@ -336,7 +387,7 @@ public class AllegroHttpClient : IDisposable
             }
         }
 
-        await ThrowAppropriateException(response, content);
+        await ThrowAppropriateException(response, content).ConfigureAwait(false);
         return default!;
     }
 
@@ -345,7 +396,7 @@ public class AllegroHttpClient : IDisposable
     /// </summary>
     public async Task<T> ReadJsonAsync<T>(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(content))
             return default!;
 
@@ -361,16 +412,16 @@ public class AllegroHttpClient : IDisposable
 
     private async Task HandleResponseAsync(HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         LogResponse(response.StatusCode, content);
 
         if (!response.IsSuccessStatusCode)
         {
-            await ThrowAppropriateException(response, content);
+            await ThrowAppropriateException(response, content).ConfigureAwait(false);
         }
     }
 
-    private async Task ThrowAppropriateException(HttpResponseMessage response, string content)
+    private Task ThrowAppropriateException(HttpResponseMessage response, string content)
     {
         ErrorsHolder? errors = null;
         AuthError? authError = null;
@@ -471,6 +522,7 @@ public class AllegroHttpClient : IDisposable
 
     public void Dispose()
     {
-        _httpClient?.Dispose();
+        if (_disposeHttpClient)
+            _httpClient?.Dispose();
     }
 }

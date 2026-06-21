@@ -2,6 +2,83 @@
 
 > **Note:** This is an unofficial, community-maintained SDK. It is not officially endorsed or supported by Allegro.
 
+## Version 2.3.0 (June 2026)
+
+This release closes the remaining gaps against the latest Allegro REST API specification, bringing documented endpoint coverage to 100% (267/267 operations), and fixes several incorrect endpoint paths.
+
+### What's New
+
+**Flexible Bundles (`SaleExtensions`)**
+- Full CRUD for flexible bundles (`/sale/flexible-bundles`): list, create, get, update, delete.
+
+**Batch offer price & stock modification (`BatchOperations`, beta)**
+- Create an offer bulk-modification command (`/sale/offer-bulk-modification-commands`) and poll its summary and per-task report.
+
+**Order serial numbers & Fulfillment returns**
+- Set line-item serial numbers on an order (`POST /order/checkout-forms/{id}/serial-numbers`).
+- Refund dispositions report for Fulfillment returns (`GET /fulfillment/returns/refund-dispositions`).
+
+**Shipment delivery proposals**
+- Get available delivery options for an order (`GET /shipment-management/delivery-proposals/{orderId}`).
+
+**Price Automation (`PriceAutomation` - new client, 6 methods)**
+Manage automatic pricing rules:
+- List, create, read, update and delete automatic pricing rules (`/sale/price-automation/rules`)
+- Read the automatic pricing rules assigned to a specific offer
+
+**Messaging - new endpoints (`Messaging`)**
+- Write a brand-new message (`POST /messaging/messages`)
+- Delete a single message
+- Declare, upload (binary) and download message attachments
+- Mark a thread as read/unread (`PUT /messaging/threads/{threadId}/read`)
+
+**Order events, shipments & tracking (`Orders`)**
+- Order events stream (`GET /order/events`)
+- List and add parcel tracking numbers for an order (`/order/checkout-forms/{id}/shipments`)
+- Carrier parcel tracking history (`/order/carriers/{carrierId}/tracking`)
+- Allegro pickup/drop-off points (`/order/carriers/ALLEGRO/points`)
+- Upload a URL to an order billing document
+
+**Allegro Prices - account participation & subsidy commands (`AllegroPrices`)**
+- Get/update account participation status
+- Query offers status (`POST /sale/allegro-prices/offers-queries`)
+- Submit/exclude offers commands and poll their status
+
+**Sale extensions (`SaleExtensions`)**
+- Get/delete a bundle and update bundle discounts
+- Get/update/deactivate a single loyalty promotion
+- Update and delete offer tags
+- Get/modify a single additional services group
+- Detailed promo-options command result (per-offer tasks)
+
+**Other additions**
+- Offer rating (`GET /sale/offers/{offerId}/rating`) and offers with unfilled parameters
+- Category product parameters and scheduled category parameter changes
+- Upload binary attachments for after-sales service conditions and post-purchase issues; download issue attachments; change claim status
+
+### Production Hardening
+
+- **OAuth2 client-credentials grant:** When only `ClientId`/`ClientSecret` are configured (no `AccessToken`), the SDK now automatically acquires an application token from `TokenEndpoint`, caches it, and refreshes it before expiry (and once on a 401 when `EnableAutoTokenRefresh` is set). Previously client-credentials-only configuration sent unauthenticated requests. New `IAllegroTokenProvider`, `ClientCredentialsTokenProvider`, `StaticTokenProvider`, and `AllegroAuthenticationHandler` types.
+- **Dependency injection / IHttpClientFactory:** New `services.AddAllegroApi(options => ...)` extension registers `AllegroApiClient` as a typed client with a properly managed `HttpClient` lifecycle. A new `AllegroApiClient(HttpClient, AllegroApiOptions, ILoggerFactory?)` constructor supports factory-managed clients.
+- **Reliable retries & exceptions:** Network failures now surface as `AllegroNetworkException` and request timeouts as `AllegroTimeoutException`, and both are retried with backoff. Caller-requested cancellation propagates as `OperationCanceledException`. Previously these were swallowed into a generic exception and never retried.
+- **`ConfigureAwait(false)`** applied across the library to avoid deadlocks in synchronous host contexts.
+
+### Bug Fixes
+
+- **Messaging:** `GetMessageAsync` now calls `GET /messaging/messages/{messageId}` (previously used a non-existent thread-scoped path); replaced the incorrect `mark-read` call with `MarkThreadReadAsync` (`PUT /messaging/threads/{threadId}/read`).
+- **Shipping:** `GetDeliverySettingsAsync`/`UpdateDeliverySettingsAsync` now use `/sale/delivery-settings` with the `marketplace.id` query parameter and a request body (previously used an incorrect path segment).
+- **Users:** `RequestRatingRemovalAsync` now performs `PUT /sale/user-ratings/{ratingId}/removal` with the correct request body (previously POSTed to a non-existent `removal-request` path).
+- **Images:** `UploadImageAsync`/`UploadImageFromStreamAsync` now POST the raw image bytes with the correct content type to the upload host (`upload.allegro.pl`). Previously they base64-encoded the bytes into a JSON `url` field and never used the upload host, so binary uploads could not succeed.
+- Removed a build warning (`CS1998`) in the HTTP client.
+
+### Compatibility
+
+This release is backward compatible for additive APIs. A few previously broken methods changed signatures as part of fixing their endpoints (`Messaging.GetMessageAsync`, `Shipping.GetDeliverySettingsAsync`/`UpdateDeliverySettingsAsync`, `Users.RequestRatingRemovalAsync`).
+
+**Removed endpoints (now compile-time errors):** the latest Allegro spec removed several endpoints that earlier versions of this SDK exposed. They are retained as members marked `[Obsolete(error: true)]`, so calling them is a **compilation error** that points to the replacement: offer variants (`AdvancedOffers.GetOfferVariantsAsync`/`CreateOfferVariantSetAsync`, `/sale/offer-variants`), `SaleExtensions.CreateBundleAsync` (`POST /sale/bundles` → use `CreateFlexibleBundleAsync`), and the legacy hyphenated Allegro Prices consent/eligibility methods (`/sale/allegro-prices-*` → use `GetAccountParticipationAsync`/`UpdateAccountParticipationAsync` and the offers-queries/submit/exclude commands).
+
+---
+
 ## Version 2.1.0 (March 2026)
 
 This release adds Allegro Prices / Alle Discount management and Marketplace information retrieval, bringing total API coverage to 97%+.

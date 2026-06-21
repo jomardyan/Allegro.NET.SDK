@@ -481,3 +481,46 @@ public record IssueAttachmentId
     [JsonPropertyName("id")]
     public string? Id { get; init; }
 }
+
+/// <summary>
+/// Request to change the status of a claim.
+/// </summary>
+public record ClaimStatusChangeRequest
+{
+    /// <summary>
+    /// New claim status (e.g. ACCEPTED_REPAIR, ACCEPTED_REFUND, ACCEPTED_EXCHANGE,
+    /// ACCEPTED_PARTIAL_REFUND, REJECTED_PRODUCT_NOT_RETURNED, REJECTED_OTHER, ...).
+    /// </summary>
+    [JsonPropertyName("status")]
+    public string? Status { get; init; }
+
+    /// <summary>
+    /// Message explaining the status change.
+    /// </summary>
+    [JsonPropertyName("message")]
+    public string? Message { get; init; }
+
+    /// <summary>
+    /// Partial refund amount (required for ACCEPTED_PARTIAL_REFUND).
+    /// </summary>
+    [JsonPropertyName("partialRefund")]
+    public ClaimPartialRefund? PartialRefund { get; init; }
+}
+
+/// <summary>
+/// Partial refund amount for a claim status change.
+/// </summary>
+public record ClaimPartialRefund
+{
+    /// <summary>
+    /// Amount as string.
+    /// </summary>
+    [JsonPropertyName("amount")]
+    public string? Amount { get; init; }
+
+    /// <summary>
+    /// ISO 4217 currency code.
+    /// </summary>
+    [JsonPropertyName("currency")]
+    public string? Currency { get; init; }
+}

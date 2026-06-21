@@ -143,4 +143,67 @@ public class PostPurchaseIssuesClient
             null,
             cancellationToken);
     }
+
+    /// <summary>
+    /// Uploads the binary content of a previously declared issue attachment.
+    /// </summary>
+    /// <param name="attachmentId">The declared attachment identifier.</param>
+    /// <param name="fileBytes">File content as a byte array.</param>
+    /// <param name="contentType">MIME type (image/png, image/gif, image/bmp, image/tiff, image/jpeg or application/pdf).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Identifier of the uploaded attachment.</returns>
+    public async System.Threading.Tasks.Task<IssueAttachmentId> UploadAttachmentAsync(
+        string attachmentId,
+        byte[] fileBytes,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(attachmentId);
+        ArgumentNullException.ThrowIfNull(fileBytes);
+        ArgumentNullException.ThrowIfNull(contentType);
+        var response = await _httpClient.PutRawAsync(
+            $"/sale/issues/attachments/{attachmentId}",
+            fileBytes,
+            contentType,
+            cancellationToken);
+        return await _httpClient.ReadJsonAsync<IssueAttachmentId>(response).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Downloads the binary content of an issue attachment.
+    /// </summary>
+    /// <param name="attachmentId">The attachment identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>File content as a byte array.</returns>
+    public async System.Threading.Tasks.Task<byte[]> DownloadAttachmentAsync(
+        string attachmentId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(attachmentId);
+        var response = await _httpClient.GetRawAsync(
+            $"/sale/issues/attachments/{attachmentId}",
+            null,
+            cancellationToken);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Changes the status of a claim.
+    /// </summary>
+    /// <param name="issueId">The issue (claim) identifier.</param>
+    /// <param name="request">The new status and explanation message.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public System.Threading.Tasks.Task ChangeIssueStatusAsync(
+        string issueId,
+        ClaimStatusChangeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(issueId);
+        ArgumentNullException.ThrowIfNull(request);
+        return _httpClient.PostAsync<ClaimStatusChangeRequest>(
+            $"/sale/issues/{issueId}/status",
+            request,
+            null,
+            cancellationToken);
+    }
 }

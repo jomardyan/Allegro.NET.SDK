@@ -8,12 +8,12 @@
     
     <!-- NuGet Package Information -->
     <PackageId>AllegroApi</PackageId>
-  <Version>2.0.0</Version>
+  <Version>2.3.0</Version>
     <Authors>jomardyan</Authors>
     <Company>Allegro .NET SDK</Company>
     <Product>Unofficial Allegro .NET SDK</Product>
     <Title>Unofficial Allegro .NET SDK - Complete Client for Allegro REST API</Title>
-    <Description>An unofficial, community-maintained .NET client library for Allegro REST API. Provides 170+ methods covering 95% of all Allegro endpoints across 35 specialized clients. Features: strongly-typed requests/responses, async/await throughout, 11 specialized exception types, built-in retry logic with exponential backoff, rate limit handling, complete XML documentation, 200+ unit tests. Supports: offers, products, orders, fulfillment, categories, images, shipping, payments, billing, messaging, disputes, returns, badges, classifieds, EU compliance (GPSR), and more. Production-ready for .NET 8.0+. Note: This SDK is not officially endorsed or supported by Allegro.</Description>
+    <Description>An unofficial, community-maintained .NET client library for Allegro REST API. Provides 240+ methods covering 100% of all documented Allegro endpoints (267 operations) across 36 specialized clients. Features: strongly-typed requests/responses, async/await throughout, 11 specialized exception types, built-in retry logic with exponential backoff, rate limit handling, complete XML documentation, 175+ unit tests. Supports: offers, products, orders, order events &amp; parcel tracking, fulfillment, categories, images, shipping, payments, billing, messaging &amp; attachments, disputes, returns, badges, classifieds, price automation, Allegro Prices, EU compliance (GPSR), and more. Production-ready for .NET 8.0+. Note: This SDK is not officially endorsed or supported by Allegro.</Description>
     <PackageTags>allegro;allegro-api;rest-api;ecommerce;marketplace;poland;polish;client;sdk;dotnet;csharp;async;typed;auction;shopping;retail;api-client;http-client;fulfillment;warehouse;logistics;gpsr;compliance;unofficial</PackageTags>
     <RepositoryUrl>https://github.com/jomardyan/Allegro.NET.SDK</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
