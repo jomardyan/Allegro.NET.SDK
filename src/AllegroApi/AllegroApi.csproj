@@ -8,7 +8,7 @@
     
     <!-- NuGet Package Information -->
     <PackageId>AllegroApi</PackageId>
-  <Version>2.2.0</Version>
+  <Version>2.3.0</Version>
     <Authors>jomardyan</Authors>
     <Company>Allegro .NET SDK</Company>
     <Product>Unofficial Allegro .NET SDK</Product>

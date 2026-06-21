@@ -56,7 +56,7 @@ public class AllegroApiOptions
     /// The SDK version, derived from the assembly version so the User-Agent never drifts.
     /// </summary>
     private static readonly string SdkVersion =
-        typeof(AllegroApiOptions).Assembly.GetName().Version?.ToString(3) ?? "2.2.0";
+        typeof(AllegroApiOptions).Assembly.GetName().Version?.ToString(3) ?? "2.3.0";
 
     /// <summary>
     /// User-Agent header value (default: AllegroApi-CSharp/{assembly version})

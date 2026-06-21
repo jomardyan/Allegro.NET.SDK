@@ -2,7 +2,7 @@
 
 > **Note:** This is an unofficial, community-maintained SDK. It is not officially endorsed or supported by Allegro.
 
-## Version 2.2.0 (June 2026)
+## Version 2.3.0 (June 2026)
 
 This release closes the remaining gaps against the latest Allegro REST API specification, bringing documented endpoint coverage to 100% (267/267 operations), and fixes several incorrect endpoint paths.
 

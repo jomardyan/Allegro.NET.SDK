@@ -72,7 +72,7 @@ dotnet add package AllegroApi
 
 ### Package Reference
 ```xml
-<PackageReference Include="AllegroApi" Version="2.2.0" />
+<PackageReference Include="AllegroApi" Version="2.3.0" />
 ```
 
 **Requirements:** .NET 8.0 or higher
@@ -1069,7 +1069,7 @@ Contributions are welcome. Please follow these guidelines:
 
 ## Release Notes
 
-### Version 2.2.0 (June 2026)
+### Version 2.3.0 (June 2026)
 
 Closes the remaining gaps against the latest Allegro REST API spec (100% documented coverage — 267/267 operations) and hardens the SDK for production.
 
